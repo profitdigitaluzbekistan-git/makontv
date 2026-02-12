@@ -1,0 +1,39 @@
+{
+  "name": "MakonTV — Стриминг из Узбекистана",
+  "short_name": "MakonTV",
+  "description": "Фильмы и сериалы из Узбекистана. Смотрите в 4K без рекламы.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0a0a14",
+  "theme_color": "#6bf1f6",
+  "lang": "ru",
+  "categories": ["entertainment", "video"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Каталог фильмов",
+      "url": "/#catalog-films",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Мой профиль",
+      "url": "/#profile",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

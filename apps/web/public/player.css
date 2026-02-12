@@ -1,0 +1,47 @@
+/* MakonTV Video Player Styles */
+.mkn-player{position:relative;width:100%;height:100%;background:#000;overflow:hidden;user-select:none}
+.mkn-player video{width:100%;height:100%;object-fit:contain}
+.mkn-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.4);z-index:5}
+.mkn-spinner{width:48px;height:48px;border:3px solid rgba(107,241,246,.2);border-top-color:#6bf1f6;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.mkn-controls{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;background:linear-gradient(180deg,rgba(0,0,0,.7)0%,transparent 30%,transparent 60%,rgba(0,0,0,.8)100%);z-index:10;opacity:0;transition:opacity .3s;padding:16px}
+.mkn-controls.visible,.mkn-player:hover .mkn-controls{opacity:1}
+.mkn-top{display:flex;align-items:center;gap:12px}
+.mkn-title{flex:1;font-size:16px;font-weight:600;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mkn-top-r{display:flex;gap:8px}
+.mkn-center{display:flex;align-items:center;justify-content:center;gap:32px}
+.mkn-btn{background:none;border:none;color:#fff;cursor:pointer;padding:8px;border-radius:50%;transition:background .2s}
+.mkn-btn:hover{background:rgba(255,255,255,.15)}
+.mkn-btn svg{width:24px;height:24px}
+.mkn-play-btn{background:rgba(107,241,246,.2)!important;width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.mkn-play-btn svg{width:32px;height:32px;margin-left:4px}
+.mkn-play-btn:hover{background:rgba(107,241,246,.3)!important}
+.mkn-seek-btn svg{width:28px;height:28px}
+.mkn-bottom{display:flex;flex-direction:column;gap:8px}
+.mkn-progress-wrap{position:relative;height:20px;display:flex;align-items:center;cursor:pointer}
+.mkn-progress-bg{position:absolute;width:100%;height:4px;background:rgba(255,255,255,.2);border-radius:2px;overflow:hidden}
+.mkn-progress-wrap:hover .mkn-progress-bg{height:6px}
+.mkn-progress-buf{height:100%;background:rgba(255,255,255,.3);position:absolute;border-radius:2px;transition:width .3s}
+.mkn-progress-fill{height:100%;background:#6bf1f6;position:absolute;border-radius:2px}
+.mkn-progress-input{position:absolute;width:100%;height:20px;opacity:0;cursor:pointer;margin:0}
+.mkn-bottom-row{display:flex;justify-content:space-between;align-items:center}
+.mkn-time{font-size:13px;color:rgba(255,255,255,.8);font-variant-numeric:tabular-nums}
+.mkn-bottom-btns{display:flex;gap:4px}
+.mkn-bottom-btns .mkn-btn svg{width:20px;height:20px}
+#mkn-quality-btn{font-size:12px;border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:4px 10px}
+#mkn-quality-btn:hover{border-color:#6bf1f6}
+.mkn-quality-menu{position:absolute;right:16px;bottom:80px;background:#1a1a2e;border:1px solid #333;border-radius:12px;padding:8px 0;z-index:20;min-width:160px}
+.mkn-qm-title{padding:8px 16px;font-size:12px;color:#888;text-transform:uppercase}
+.mkn-qm-item{padding:10px 16px;cursor:pointer;transition:background .2s;font-size:14px;color:#fff}
+.mkn-qm-item:hover{background:rgba(107,241,246,.1)}
+.mkn-qm-item.active{color:#6bf1f6}
+.mkn-qm-item.active::before{content:'✓ '}
+.mkn-skip{position:absolute;right:24px;bottom:100px;background:rgba(107,241,246,.2);border:1px solid #6bf1f6;color:#fff;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:14px;z-index:15;transition:all .2s}
+.mkn-skip:hover{background:rgba(107,241,246,.3)}
+@media(max-width:768px){
+  .mkn-play-btn{width:52px;height:52px}
+  .mkn-play-btn svg{width:24px;height:24px}
+  .mkn-center{gap:20px}
+  .mkn-title{font-size:14px}
+  .mkn-skip{bottom:80px;right:12px;font-size:12px;padding:8px 14px}
+}

@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(neonctl:*)",
+      "Bash(vercel --version:*)",
+      "Bash(gh auth:*)",
+      "Bash(sudo npm install:*)",
+      "Bash(brew install:*)",
+      "Bash(npx neonctl:*)",
+      "Bash(npx vercel:*)",
+      "Bash(gh:*)",
+      "Bash(openssl rand:*)",
+      "Bash(npm run db:migrate:*)",
+      "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_wdSm6LjFC3UB@ep-purple-silence-aecdj610.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require\" npm run db:migrate:*)",
+      "Bash(npm ls:*)",
+      "Bash(npx tsx:*)",
+      "Bash(psql:*)",
+      "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_wdSm6LjFC3UB@ep-purple-silence-aecdj610.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require\" npm run db:seed)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git config:*)"
+    ]
+  }
+}

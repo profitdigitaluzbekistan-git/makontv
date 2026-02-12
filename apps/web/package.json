@@ -1,0 +1,9 @@
+{
+  "name": "@makontv/web",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "npx serve public -l 3000 --cors",
+    "dev:proxy": "echo 'For API proxy, use: npx http-server public -p 3000 --proxy http://localhost:3001'"
+  }
+}
