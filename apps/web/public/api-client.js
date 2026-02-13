@@ -710,6 +710,9 @@
     _origGo(page);
 
     // After go() shows the page, load real data for detail pages
+    if (page === 'detail' && window._currentSlug) {
+      loadMovieDetail(window._currentSlug);
+    }
     if (page === 'series-detail' && window._currentSlug) {
       loadSeriesDetail(window._currentSlug);
     }

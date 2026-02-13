@@ -354,11 +354,6 @@ a{color:inherit;text-decoration:none}
 .skel-text.w60{width:60%}.skel-text.w80{width:80%}.skel-text.w40{width:40%}
 .skel-card{width:var(--pw);flex-shrink:0}
 
-/* ═══ STATE TOGGLE ═══ */
-.st-tg{position:fixed;bottom:var(--sp24);right:var(--sp24);z-index:150;display:flex;border-radius:var(--pill);overflow:hidden;border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(16px);background:rgba(10,10,15,.9);box-shadow:0 8px 32px rgba(0,0,0,.5)}
-.st-l{padding:10px 14px;font-size:11px;font-weight:var(--fw6);color:var(--t3);display:flex;align-items:center;letter-spacing:.05em;text-transform:uppercase}
-.st-b{padding:10px 20px;font-size:12px;font-weight:var(--fw7);background:transparent;color:var(--t3);border:none;cursor:pointer;font-family:var(--font);transition:all var(--ease);letter-spacing:.03em;white-space:nowrap}
-.st-b.active{background:var(--accent);color:#0A0A0F}
 
 /* ═══ FOOTER ═══ */
 .ft{border-top:1px solid var(--border);margin-top:var(--sp64)}
@@ -626,7 +621,6 @@ a{color:inherit;text-decoration:none}
   .about-in{grid-template-columns:1fr;gap:var(--sp32)}
   .promo{margin-left:var(--sp16);margin-right:var(--sp16);flex-direction:column;align-items:flex-start;gap:var(--sp16);padding:var(--sp24)}.promo-btn{width:100%;display:flex;align-items:center;justify-content:center}
   .ft-in{padding:var(--sp32) var(--sp16) 120px}.ft-grid{grid-template-columns:1fr;gap:var(--sp24)}.ft-bot{flex-direction:column;gap:var(--sp16)}
-  .st-tg{bottom:72px;right:var(--sp16);left:var(--sp16);justify-content:center}
   .tr-c{width:260px}.tr-img{width:260px;height:146px}
   .plans-grid{grid-template-columns:1fr}
   .pg-head{padding-top:72px}
@@ -1444,12 +1438,6 @@ a{color:inherit;text-decoration:none}
 <!-- ═══ TOAST ═══ -->
 <div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span id="toastMsg"></span></div>
 
-<!-- ═══ STATE TOGGLE ═══ -->
-<div class="st-tg">
-  <div class="st-l">Режим:</div>
-  <button class="st-b active" id="sG" onclick="setS('guest')">Гость</button>
-  <button class="st-b" id="sP" onclick="setS('premium')">Premium</button>
-</div>
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 /* ═══ ICONS ═══ */
@@ -1460,9 +1448,9 @@ const IC={
   chev:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>'
 };
 
-/* ═══ DATA ═══ */
-const M=["Тень Самарканда","Последний караван","Звёзды над Бухарой","Шёлковый путь","Огни Ташкента","Дочь ветра","Крепость","Пустыня снов","Золотой орёл","Небесный кочевник","Ночной дозор","Великий шёлк","Хранитель тайн","Степной волк","Лунная соната","Последний рубеж"];
-const S=["Код: Ташкент","Империя","Клан","Наследники","Тёмные воды","Перекрёсток","Династия","Второй шанс","Круг","Контракт"];
+/* ═══ DATA (loaded from API) ═══ */
+const M=[];
+const S=[];
 const PG=i=>`pg-${(i%8)+1}`;
 
 /* ═══ RENDER: Poster cards ═══ */
@@ -1477,12 +1465,9 @@ function rPC(id,ts,bt,click){
   }).join('');
 }
 
-/* ═══ RENDER: CW cards ═══ */
+/* ═══ RENDER: CW cards (skeleton placeholder) ═══ */
 function rCW(id){
-  const items=[{t:"Код: Ташкент",s:"Серия 5 из 10",p:48,ser:true},{t:"Последний караван",s:"1ч 12мин осталось",p:65,ser:false},{t:"Империя",s:"Серия 3 из 8",p:30,ser:true},{t:"Звёзды над Бухарой",s:"45мин осталось",p:72,ser:false},{t:"Дочь ветра",s:"Серия 7 из 12",p:55,ser:true},{t:"Огни Ташкента",s:"Серия 2 из 6",p:18,ser:true}];
-  document.getElementById(id).innerHTML=items.map((it,i)=>
-    `<div class="cw" onclick="go(it.ser?'series-detail':'detail')"><div class="cw-img"><div class="cw-poster ${PG(i)}"></div><div class="cw-play"><div class="play-c">${IC.play}</div></div><div class="cw-prog"><div class="cw-prog-f" style="width:${it.p}%"></div></div></div><div class="cw-meta"><div class="cw-t">${it.t}</div><div class="cw-s">${it.s}</div></div></div>`
-  ).join('');
+  rSkel(id,6);
 }
 
 /* ═══ RENDER: Trailers ═══ */
@@ -1615,7 +1600,16 @@ function go(page){
   }
   if(page==='library')renderLib();
   if(page==='plans')updatePlans();
-  if(page==='series-detail'){buildSeasonSelector();buildEpisodes(0);rPC('car-ser-rec',S.slice(1),'');}
+  if(page==='series-detail'){buildSeasonSelector();buildEpisodes(0);}
+  // Clear detail page hardcoded content — API will fill with real data
+  if(page==='detail'){
+    const dt=document.querySelector('#page-detail .d-title');if(dt)dt.textContent='Загрузка...';
+    const dm=document.querySelector('#page-detail .d-meta');if(dm)dm.innerHTML='';
+    const dd=document.querySelector('#page-detail .d-desc');if(dd)dd.textContent='';
+    const dc=document.querySelector('#page-detail .d-chips');if(dc)dc.innerHTML='';
+    const ab=document.querySelector('#page-detail .about-desc');if(ab)ab.textContent='';
+    const ad=document.querySelector('#page-detail .about-dets');if(ad)ad.innerHTML='';
+  }
   location.hash=page;
 }
 
@@ -1633,21 +1627,20 @@ let favorites=[];
 function setS(m){
   if(m==='guest'){
     isSub=false;isAuth=false;favorites=[];
-    document.getElementById('sG').classList.add('active');document.getElementById('sP').classList.remove('active');
     document.getElementById('navAuth').style.display='';document.getElementById('navPrem').style.display='none';document.getElementById('navAv').style.display='none';
-    document.getElementById('ctaS').style.display='';document.getElementById('dSub').style.display='';
-    // Profile plan
-    const pp=document.getElementById('profPlan');pp.textContent='Бесплатный';pp.className='prof-plan free';
-    document.getElementById('profSubText').textContent='Бесплатный тариф';
-    document.getElementById('profSubVal').textContent='Бесплатный';
+    const cs=document.getElementById('ctaS');if(cs)cs.style.display='';
+    const ds=document.getElementById('dSub');if(ds)ds.style.display='';
+    const pp=document.getElementById('profPlan');if(pp){pp.textContent='Бесплатный';pp.className='prof-plan free';}
+    const pst=document.getElementById('profSubText');if(pst)pst.textContent='Бесплатный тариф';
+    const psv=document.getElementById('profSubVal');if(psv)psv.textContent='Бесплатный';
   } else {
-    isSub=true;isAuth=true;favorites=M.slice(0,3);
-    document.getElementById('sP').classList.add('active');document.getElementById('sG').classList.remove('active');
+    isSub=true;isAuth=true;favorites=[];
     document.getElementById('navAuth').style.display='none';document.getElementById('navPrem').style.display='';document.getElementById('navAv').style.display='';
-    document.getElementById('ctaS').style.display='none';document.getElementById('dSub').style.display='none';
-    const pp=document.getElementById('profPlan');pp.textContent='Premium';pp.className='prof-plan premium';
-    document.getElementById('profSubText').textContent='Premium — активна';
-    document.getElementById('profSubVal').textContent='Активна';
+    const cs=document.getElementById('ctaS');if(cs)cs.style.display='none';
+    const ds=document.getElementById('dSub');if(ds)ds.style.display='none';
+    const pp=document.getElementById('profPlan');if(pp){pp.textContent='Premium';pp.className='prof-plan premium';}
+    const pst=document.getElementById('profSubText');if(pst)pst.textContent='Premium — активна';
+    const psv=document.getElementById('profSubVal');if(psv)psv.textContent='Активна';
   }
   updatePlans();
 }
@@ -1875,7 +1868,6 @@ function filterCatalog(genre,type){
 
 /* ═══ INIT ═══ */
 buildHome();buildCatalogs();
-rPC('car-rec',M.slice(1));rTR('car-tr');
 setS('guest');
 const h=location.hash.replace('#','');
 if(['home','detail','catalog-films','catalog-series','series-detail','profile','personal','security','plans','checkout','player','actor','library','downloads','referral','profiles','404'].includes(h))go(h);else go('home');
@@ -1898,31 +1890,9 @@ if ('serviceWorker' in navigator) {
       console.log('SW registered:', reg.scope);
     }).catch(err => console.warn('SW failed:', err));
   });
-}
-// PWA Install prompt
-let deferredInstallPrompt = null;
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredInstallPrompt = e;
-  // Show install banner after 30 seconds
-  setTimeout(() => {
-    if (deferredInstallPrompt) showInstallBanner();
-  }, 30000);
-});
-function showInstallBanner() {
-  if (!deferredInstallPrompt) return;
-  const banner = document.createElement('div');
-  banner.id = 'pwa-banner';
-  banner.innerHTML = '<div style="position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid #6bf1f6;border-radius:16px;padding:16px 24px;display:flex;align-items:center;gap:16px;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,0.5);max-width:90vw"><div><div style="font-weight:700;color:#fff;font-size:15px">Установить MakonTV</div><div style="color:#aaa;font-size:13px">Быстрый доступ с рабочего стола</div></div><button onclick="installPWA()" style="background:#6bf1f6;color:#0a0a14;border:none;border-radius:8px;padding:8px 20px;font-weight:700;cursor:pointer;white-space:nowrap">Установить</button><button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;color:#666;font-size:20px;cursor:pointer">✕</button></div>';
-  document.body.appendChild(banner);
-}
-function installPWA() {
-  if (!deferredInstallPrompt) return;
-  deferredInstallPrompt.prompt();
-  deferredInstallPrompt.userChoice.then(r => {
-    if (r.outcome === 'accepted') showToast('MakonTV установлен!');
-    deferredInstallPrompt = null;
-    document.getElementById('pwa-banner')?.remove();
+  // Reload when new SW takes control (ensures fresh HTML)
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    window.location.reload();
   });
 }
 </script>

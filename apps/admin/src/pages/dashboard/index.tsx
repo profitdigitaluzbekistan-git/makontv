@@ -18,12 +18,16 @@ export const DashboardPage: React.FC = () => {
   const [stats, setStats] = useState<Stats | null>(null);
 
   useEffect(() => {
-    fetch('/admin/stats', {
+    const apiUrl = import.meta.env.VITE_API_URL || '';
+    fetch(`${apiUrl}/admin/stats`, {
       headers: { 'X-Admin-Secret': getAdminSecret() },
     })
-      .then(r => r.json())
+      .then(r => { if (!r.ok) throw new Error(r.statusText); return r.json(); })
       .then(setStats)
-      .catch(console.error);
+      .catch(err => {
+        console.error('Dashboard stats error:', err);
+        setStats({ counts: {}, recentMovies: [], recentUsers: [] });
+      });
   }, []);
 
   if (!stats) return <div>Загрузка...</div>;

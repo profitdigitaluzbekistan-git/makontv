@@ -1,50 +1,33 @@
 /**
- * MakonTV Service Worker
+ * MakonTV Service Worker v2
  *
  * Strategies:
- *   - App shell (HTML/CSS/JS): Cache-first → always offline-capable
+ *   - HTML pages: Network-first → always fresh, offline fallback
  *   - API data: Network-first → fresh data, fallback to cache
- *   - Images/Posters: Cache-first → fast loads, lazy update
+ *   - JS/CSS assets: Cache-first → fast loads
+ *   - Images/Posters: Cache-first → fast loads
  *   - Videos: Network-only → too large to cache
  */
-const CACHE_NAME = 'makontv-v1';
-const SHELL_CACHE = 'makontv-shell-v1';
-const IMG_CACHE = 'makontv-img-v1';
-const API_CACHE = 'makontv-api-v1';
+const CACHE_VERSION = 'v2';
+const SHELL_CACHE = 'makontv-shell-' + CACHE_VERSION;
+const IMG_CACHE = 'makontv-img-' + CACHE_VERSION;
+const API_CACHE = 'makontv-api-' + CACHE_VERSION;
 
-// App shell — always cache these
-const SHELL_FILES = [
-  '/',
-  '/index.html',
-  '/api-client.js',
-  '/user-actions.js',
-  '/auth-client.js',
-  '/i18n.js',
-  '/manifest.json',
-];
-
-// ═══ INSTALL — cache app shell ═══
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(SHELL_CACHE).then(cache => {
-      console.log('[SW] Caching app shell');
-      return cache.addAll(SHELL_FILES);
-    })
-  );
+// ═══ INSTALL — skip waiting immediately ═══
+self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
-// ═══ ACTIVATE — clean old caches ═══
+// ═══ ACTIVATE — delete ALL old caches, claim clients ═══
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then(keys => {
       return Promise.all(
-        keys.filter(key => !key.startsWith('makontv-'))
+        keys.filter(key => key !== SHELL_CACHE && key !== IMG_CACHE && key !== API_CACHE)
           .map(key => caches.delete(key))
       );
-    })
+    }).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 // ═══ FETCH — routing strategies ═══
@@ -69,7 +52,14 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // App shell: Cache-first
+  // HTML pages (navigation requests): Network-first
+  if (event.request.mode === 'navigate' || event.request.destination === 'document' ||
+      url.pathname === '/' || url.pathname.endsWith('.html')) {
+    event.respondWith(networkFirst(event.request, SHELL_CACHE));
+    return;
+  }
+
+  // JS/CSS assets: Cache-first
   event.respondWith(cacheFirst(event.request, SHELL_CACHE));
 });
 
@@ -126,42 +116,29 @@ function isImageRequest(request) {
 // ═══ PUSH NOTIFICATIONS ═══
 self.addEventListener('push', (event) => {
   let data = { title: 'MakonTV', body: 'Новое обновление!' };
-
-  try {
-    data = event.data.json();
-  } catch {
-    data.body = event.data?.text() || data.body;
-  }
-
-  const options = {
-    body: data.body || '',
-    icon: '/icons/icon-192.png',
-    badge: '/icons/icon-192.png',
-    vibrate: [200, 100, 200],
-    tag: data.tag || 'makontv-notification',
-    data: {
-      url: data.url || '/',
-    },
-    actions: data.actions || [
-      { action: 'open', title: 'Открыть' },
-      { action: 'dismiss', title: 'Закрыть' },
-    ],
-  };
+  try { data = event.data.json(); } catch { data.body = event.data?.text() || data.body; }
 
   event.waitUntil(
-    self.registration.showNotification(data.title, options)
+    self.registration.showNotification(data.title, {
+      body: data.body || '',
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      vibrate: [200, 100, 200],
+      tag: data.tag || 'makontv-notification',
+      data: { url: data.url || '/' },
+      actions: data.actions || [
+        { action: 'open', title: 'Открыть' },
+        { action: 'dismiss', title: 'Закрыть' },
+      ],
+    })
   );
 });
 
-// Handle notification click
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-
   const url = event.notification.data?.url || '/';
-
   event.waitUntil(
     self.clients.matchAll({ type: 'window' }).then(clients => {
-      // Focus existing tab if open
       for (const client of clients) {
         if (client.url.includes(self.location.origin)) {
           client.focus();
@@ -169,7 +146,6 @@ self.addEventListener('notificationclick', (event) => {
           return;
         }
       }
-      // Open new tab
       return self.clients.openWindow(url);
     })
   );
@@ -183,7 +159,5 @@ self.addEventListener('sync', (event) => {
 });
 
 async function syncWatchHistory() {
-  // Retrieve queued watch history from IndexedDB and POST to API
-  // Implemented in auth-client.js when offline
   console.log('[SW] Syncing watch history');
 }
