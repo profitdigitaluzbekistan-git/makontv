@@ -1,17 +1,16 @@
 /**
- * MakonTV Service Worker v2
+ * MakonTV Service Worker v3
  *
  * Strategies:
- *   - HTML pages: Network-first → always fresh, offline fallback
- *   - API data: Network-first → fresh data, fallback to cache
- *   - JS/CSS assets: Cache-first → fast loads
+ *   - ALL requests (HTML, JS, CSS, API): Network-first → always fresh
  *   - Images/Posters: Cache-first → fast loads
  *   - Videos: Network-only → too large to cache
+ *
+ * Cache is ONLY used as offline fallback, never served over network.
  */
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const SHELL_CACHE = 'makontv-shell-' + CACHE_VERSION;
 const IMG_CACHE = 'makontv-img-' + CACHE_VERSION;
-const API_CACHE = 'makontv-api-' + CACHE_VERSION;
 
 // ═══ INSTALL — skip waiting immediately ═══
 self.addEventListener('install', () => {
@@ -23,7 +22,7 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then(keys => {
       return Promise.all(
-        keys.filter(key => key !== SHELL_CACHE && key !== IMG_CACHE && key !== API_CACHE)
+        keys.filter(key => key !== SHELL_CACHE && key !== IMG_CACHE)
           .map(key => caches.delete(key))
       );
     }).then(() => self.clients.claim())
@@ -40,27 +39,15 @@ self.addEventListener('fetch', (event) => {
   // Skip video files — too large to cache
   if (url.pathname.includes('/videos/') || url.pathname.endsWith('.mp4')) return;
 
-  // API requests: Network-first
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(networkFirst(event.request, API_CACHE));
-    return;
-  }
-
-  // Images/posters: Cache-first
+  // Images/posters: Cache-first (only category that benefits from caching)
   if (isImageRequest(event.request)) {
     event.respondWith(cacheFirst(event.request, IMG_CACHE));
     return;
   }
 
-  // HTML pages (navigation requests): Network-first
-  if (event.request.mode === 'navigate' || event.request.destination === 'document' ||
-      url.pathname === '/' || url.pathname.endsWith('.html')) {
-    event.respondWith(networkFirst(event.request, SHELL_CACHE));
-    return;
-  }
-
-  // JS/CSS assets: Cache-first
-  event.respondWith(cacheFirst(event.request, SHELL_CACHE));
+  // EVERYTHING else (HTML, JS, CSS, API, fonts): Network-first
+  // Cache is only used as offline fallback
+  event.respondWith(networkFirst(event.request, SHELL_CACHE));
 });
 
 // ═══ STRATEGIES ═══
