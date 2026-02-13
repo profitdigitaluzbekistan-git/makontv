@@ -50830,6 +50830,10 @@ function crudRoutes(path, table, options) {
     const body = await c4.req.json();
     delete body.id;
     delete body.createdAt;
+    delete body.updatedAt;
+    for (const key of Object.keys(body)) {
+      if (body[key] === void 0) delete body[key];
+    }
     const [updated] = await db.update(table).set(body).where(eq2(table.id, id)).returning();
     if (!updated) return c4.json({ error: "Not found" }, 404);
     return c4.json(updated);
@@ -50840,6 +50844,10 @@ function crudRoutes(path, table, options) {
     const body = await c4.req.json();
     delete body.id;
     delete body.createdAt;
+    delete body.updatedAt;
+    for (const key of Object.keys(body)) {
+      if (body[key] === void 0) delete body[key];
+    }
     const [updated] = await db.update(table).set(body).where(eq2(table.id, id)).returning();
     if (!updated) return c4.json({ error: "Not found" }, 404);
     return c4.json(updated);

@@ -139,6 +139,11 @@ function crudRoutes(
     const body = await c.req.json();
     delete body.id; // don't update PK
     delete body.createdAt;
+    delete body.updatedAt;
+    // Remove undefined/null values that break Drizzle
+    for (const key of Object.keys(body)) {
+      if (body[key] === undefined) delete body[key];
+    }
     const [updated] = await db.update(table).set(body).where(eq(table.id, id)).returning();
     if (!updated) return c.json({ error: 'Not found' }, 404);
     return c.json(updated);
@@ -151,6 +156,10 @@ function crudRoutes(
     const body = await c.req.json();
     delete body.id;
     delete body.createdAt;
+    delete body.updatedAt;
+    for (const key of Object.keys(body)) {
+      if (body[key] === undefined) delete body[key];
+    }
     const [updated] = await db.update(table).set(body).where(eq(table.id, id)).returning();
     if (!updated) return c.json({ error: 'Not found' }, 404);
     return c.json(updated);

@@ -119,9 +119,12 @@
         });
       }
 
-      // Hero banner from featured
+      // Hero banner — store all items and start rotation
       if (data.hero && data.hero.length > 0) {
+        window._heroItems = data.hero;
+        window._heroIndex = 0;
         updateHero(data.hero[0]);
+        initHeroRotation(data.hero);
       }
     }).catch(err => {
       console.warn('API unavailable, using mock data:', err.message);
@@ -179,6 +182,54 @@
     window._currentHeroType = item.type || 'movie';
   }
 
+  function initHeroRotation(items) {
+    if (!items || items.length <= 1) return;
+
+    // Build dots dynamically based on hero count
+    var dotsEl = document.querySelector('.hero-dots');
+    if (dotsEl) {
+      dotsEl.innerHTML = items.map(function(_, i) {
+        return '<button class="h-dot-b' + (i === 0 ? ' active' : '') + '" data-idx="' + i + '"></button>';
+      }).join('');
+
+      // Dot click handlers
+      dotsEl.querySelectorAll('.h-dot-b').forEach(function(dot) {
+        dot.addEventListener('click', function() {
+          var idx = parseInt(dot.getAttribute('data-idx'));
+          window._heroIndex = idx;
+          updateHero(items[idx]);
+          updateHeroDots(idx);
+          resetHeroTimer();
+        });
+      });
+    }
+
+    // Auto-rotate every 6 seconds
+    window._heroTimer = setInterval(function() {
+      window._heroIndex = (window._heroIndex + 1) % items.length;
+      updateHero(items[window._heroIndex]);
+      updateHeroDots(window._heroIndex);
+    }, 6000);
+  }
+
+  function updateHeroDots(activeIdx) {
+    var dots = document.querySelectorAll('.hero-dots .h-dot-b');
+    dots.forEach(function(d, i) {
+      d.classList.toggle('active', i === activeIdx);
+    });
+  }
+
+  function resetHeroTimer() {
+    if (window._heroTimer) clearInterval(window._heroTimer);
+    var items = window._heroItems;
+    if (!items || items.length <= 1) return;
+    window._heroTimer = setInterval(function() {
+      window._heroIndex = (window._heroIndex + 1) % items.length;
+      updateHero(items[window._heroIndex]);
+      updateHeroDots(window._heroIndex);
+    }, 6000);
+  }
+
   function renderContinueWatching(containerId, items) {
     const el = document.getElementById(containerId);
     if (!el || !items.length) { rCW(containerId); return; }
@@ -211,15 +262,16 @@
 
     // Load movies
     api('/api/movies?limit=20').then(data => {
-      renderCards('cat-films', data.data || data, '');
+      var items = (data.data || data).map(function(m) { m.type = m.type || 'movie'; return m; });
+      renderCards('cat-films', items, '');
     }).catch(() => {
-      // Fallback to mock
       rPC('cat-films', [...M, ...S.slice(0, 6)], '');
     });
 
     // Load series
     api('/api/series?limit=20').then(data => {
-      renderCards('cat-series', data.data || data, '');
+      var items = (data.data || data).map(function(s) { s.type = s.type || 'series'; return s; });
+      renderCards('cat-series', items, '');
     }).catch(() => {
       rPC('cat-series', [...S, ...M.slice(0, 6)], '');
     });
@@ -705,9 +757,11 @@
 
     rSkel(containerId, 12);
 
+    const itemType = isFilms ? 'movie' : 'series';
     const url = genreSlug ? `${endpoint}?genre=${genreSlug}&limit=20` : `${endpoint}?limit=20`;
     api(url).then(data => {
-      renderCards(containerId, data.data || data, '');
+      var items = (data.data || data).map(function(m) { m.type = m.type || itemType; return m; });
+      renderCards(containerId, items, '');
     }).catch(() => {});
   };
 
