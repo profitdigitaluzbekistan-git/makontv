@@ -119,12 +119,9 @@
         });
       }
 
-      // Hero banner — store all items and start rotation
+      // Hero slider — build slides and start auto-play
       if (data.hero && data.hero.length > 0) {
-        window._heroItems = data.hero;
-        window._heroIndex = 0;
-        updateHero(data.hero[0]);
-        initHeroRotation(data.hero);
+        buildHeroSlider(data.hero);
       }
     }).catch(err => {
       console.warn('API unavailable, using mock data:', err.message);
@@ -132,103 +129,110 @@
     });
   };
 
-  function updateHero(item) {
-    // Update hero section with real data (selectors match actual HTML classes)
-    const heroTitle = document.querySelector('.h-title');
-    const heroDesc = document.querySelector('.h-desc');
-    const heroMeta = document.querySelector('.h-meta');
+  function buildHeroSlider(items) {
+    window._heroItems = items;
+    window._heroIndex = 0;
+    window._currentHeroSlug = items[0].slug;
+    window._currentHeroType = items[0].type || 'movie';
 
-    if (heroTitle) heroTitle.textContent = item.title || '';
-    if (heroDesc) heroDesc.textContent = item.shortDesc || item.description || '';
-    // Show badge
-    const heroBadge = document.querySelector('.h-badge');
-    if (heroBadge) heroBadge.style.display = '';
-    if (heroMeta) {
-      heroMeta.innerHTML = [
-        item.rating ? `<span class="h-rating">${item.rating}</span>` : '',
-        item.year ? `<span class="h-mt">${item.year}</span>` : '',
-        item.ageRating ? `<span class="h-dot"></span><span class="h-mt">${item.ageRating}</span>` : '',
-        item.durationMin ? `<span class="h-dot"></span><span class="h-mt">${item.durationMin} мин</span>` : '',
-        item.quality ? `<span class="h-dot"></span><span class="h-mt">${item.quality}</span>` : '',
+    var track = document.getElementById('heroTrack');
+    if (!track) return;
+
+    // Build slides
+    track.innerHTML = items.map(function(item, i) {
+      var bgUrl = item.backdropUrl || item.posterUrl || '';
+      var bgStyle = bgUrl ? 'background-image:url(' + bgUrl + ');background-size:cover;background-position:center' : '';
+      var clickPage = item.type === 'series' ? 'series-detail' : 'detail';
+      var slug = (item.slug || '').replace(/'/g, "\\'");
+      var meta = [
+        item.rating ? '<span class="h-rating">' + item.rating + '</span>' : '',
+        item.year ? '<span class="h-mt">' + item.year + '</span>' : '',
+        item.ageRating ? '<span class="h-dot"></span><span class="h-mt">' + item.ageRating + '</span>' : '',
+        item.durationMin ? '<span class="h-dot"></span><span class="h-mt">' + item.durationMin + ' мин</span>' : '',
+        item.quality ? '<span class="h-dot"></span><span class="h-mt">' + item.quality + '</span>' : '',
       ].filter(Boolean).join('');
-    }
+      var desc = item.shortDesc || item.description || '';
+      if (desc.length > 200) desc = desc.substring(0, 200) + '...';
 
-    // Update backdrop / poster
-    const heroBg = document.querySelector('.hero-bg');
-    if (heroBg) {
-      const bgUrl = item.backdropUrl || item.posterUrl;
-      if (bgUrl) {
-        heroBg.style.backgroundImage = `url(${bgUrl})`;
-        heroBg.style.backgroundSize = 'cover';
-        heroBg.style.backgroundPosition = 'center';
-      }
-    }
+      return '<div class="hero-slide">' +
+        '<div class="hero-bg" style="' + bgStyle + '"></div>' +
+        '<div class="hero-fade"></div>' +
+        '<div class="hero-ct"><div class="hero-ct-in">' +
+          '<div class="h-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><span class="h-badge-text">Эксклюзив</span></div>' +
+          '<h1 class="h-title">' + (item.title || '') + '</h1>' +
+          '<div class="h-meta">' + meta + '</div>' +
+          '<p class="h-desc">' + desc + '</p>' +
+          '<div class="h-act">' +
+            '<button class="btn btn-p" onclick="MakonAPI.goDetail(\'' + clickPage + '\',\'' + slug + '\')"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Смотреть</button>' +
+            '<button class="btn btn-s" onclick="handleSaveGlobal()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>В избранное</button>' +
+            '<button class="btn btn-g" onclick="MakonAPI.goDetail(\'' + clickPage + '\',\'' + slug + '\')">Подробнее</button>' +
+          '</div>' +
+        '</div></div>' +
+      '</div>';
+    }).join('');
 
-    // Update "Смотреть" and "Подробнее" buttons to navigate to the right movie
-    const clickPage = item.type === 'series' ? 'series-detail' : 'detail';
-    const heroActions = document.querySelector('.h-act');
-    if (heroActions) {
-      const buttons = heroActions.querySelectorAll('button');
-      buttons.forEach(btn => {
-        const text = btn.textContent.trim();
-        if (text.includes('Смотреть') || text.includes('Подробнее')) {
-          btn.onclick = function() { MakonAPI.goDetail(clickPage, item.slug); };
-        }
-      });
-    }
-
-    // Store current movie slug for "Watch" button
-    window._currentHeroSlug = item.slug;
-    window._currentHeroType = item.type || 'movie';
-  }
-
-  function initHeroRotation(items) {
-    if (!items || items.length <= 1) return;
-
-    // Build dots dynamically based on hero count
-    var dotsEl = document.querySelector('.hero-dots');
+    // Build dots
+    var dotsEl = document.getElementById('heroDots');
     if (dotsEl) {
       dotsEl.innerHTML = items.map(function(_, i) {
         return '<button class="h-dot-b' + (i === 0 ? ' active' : '') + '" data-idx="' + i + '"></button>';
       }).join('');
-
-      // Dot click handlers
       dotsEl.querySelectorAll('.h-dot-b').forEach(function(dot) {
         dot.addEventListener('click', function() {
           var idx = parseInt(dot.getAttribute('data-idx'));
-          window._heroIndex = idx;
-          updateHero(items[idx]);
-          updateHeroDots(idx);
-          resetHeroTimer();
+          heroGoTo(idx);
         });
       });
     }
 
+    // Show/hide arrows
+    var prevBtn = document.getElementById('heroPrev');
+    var nextBtn = document.getElementById('heroNext');
+    if (items.length <= 1) {
+      if (prevBtn) prevBtn.style.display = 'none';
+      if (nextBtn) nextBtn.style.display = 'none';
+      if (dotsEl) dotsEl.style.display = 'none';
+    }
+
     // Auto-rotate every 6 seconds
-    window._heroTimer = setInterval(function() {
-      window._heroIndex = (window._heroIndex + 1) % items.length;
-      updateHero(items[window._heroIndex]);
-      updateHeroDots(window._heroIndex);
-    }, 6000);
+    if (items.length > 1) {
+      window._heroTimer = setInterval(function() {
+        heroGoTo((window._heroIndex + 1) % items.length);
+      }, 6000);
+    }
   }
 
-  function updateHeroDots(activeIdx) {
-    var dots = document.querySelectorAll('.hero-dots .h-dot-b');
-    dots.forEach(function(d, i) {
-      d.classList.toggle('active', i === activeIdx);
+  // Navigate to specific slide
+  window.heroGoTo = function(idx) {
+    var items = window._heroItems;
+    if (!items) return;
+    window._heroIndex = idx;
+    var track = document.getElementById('heroTrack');
+    if (track) track.style.transform = 'translateX(-' + idx * 100 + '%)';
+    // Update dots
+    document.querySelectorAll('.hero-dots .h-dot-b').forEach(function(d, i) {
+      d.classList.toggle('active', i === idx);
     });
-  }
+    window._currentHeroSlug = items[idx].slug;
+    window._currentHeroType = items[idx].type || 'movie';
+    resetHeroTimer();
+  };
 
-  function resetHeroTimer() {
+  // Expose for arrows in HTML
+  window.updateHeroDots = function(idx) {
+    document.querySelectorAll('.hero-dots .h-dot-b').forEach(function(d, i) {
+      d.classList.toggle('active', i === idx);
+    });
+  };
+
+  window.resetHeroTimer = function() {
     if (window._heroTimer) clearInterval(window._heroTimer);
     var items = window._heroItems;
     if (!items || items.length <= 1) return;
     window._heroTimer = setInterval(function() {
-      window._heroIndex = (window._heroIndex + 1) % items.length;
-      updateHero(items[window._heroIndex]);
-      updateHeroDots(window._heroIndex);
+      heroGoTo((window._heroIndex + 1) % items.length);
     }, 6000);
-  }
+  };
 
   function renderContinueWatching(containerId, items) {
     const el = document.getElementById(containerId);
