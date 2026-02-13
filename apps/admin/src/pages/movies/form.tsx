@@ -35,6 +35,12 @@ const MovieWizard: React.FC<{ isEdit?: boolean }> = ({ isEdit }) => {
   const genresReadyRef = useRef(!isEdit);
   selectedRef.current = selectedGenreIds;
 
+  const [collectionOptions, setCollectionOptions] = useState<{ value: string; label: string }[]>([]);
+  const [selectedCollectionIds, setSelectedCollectionIds] = useState<string[]>([]);
+  const selectedCollRef = useRef<string[]>([]);
+  const collectionsReadyRef = useRef(!isEdit);
+  selectedCollRef.current = selectedCollectionIds;
+
   const { formProps, saveButtonProps, form, formLoading, queryResult } = useForm({
     resource: 'movies',
     redirect: 'list',
@@ -58,6 +64,34 @@ const MovieWizard: React.FC<{ isEdit?: boolean }> = ({ isEdit }) => {
             fetchAuth(`${API_BASE}/movie-genres`, { method: 'POST', body: JSON.stringify({ movieId, genreId: gid }) })));
         }
       } catch (e) { console.error('Genre sync error:', e); }
+
+      // Sync collection items
+      const collIds = selectedCollRef.current;
+      try {
+        // Fetch all collections to find existing links for this movie
+        const allColls = await fetchAuth(`${API_BASE}/collections?_limit=200`).then(r => r.json());
+        const existingCollIds: string[] = [];
+        const existingItemMap: Record<string, string> = {}; // collectionId -> itemId
+        for (const coll of allColls) {
+          const itemsRes = await fetchAuth(`${API_BASE}/collection-items/${coll.id}`);
+          const items: any[] = await itemsRes.json();
+          const found = items.find((it: any) => it.movieId === movieId);
+          if (found) {
+            existingCollIds.push(coll.id);
+            existingItemMap[coll.id] = found.id;
+          }
+        }
+        // Remove from collections no longer selected
+        await Promise.all(
+          existingCollIds.filter(id => !collIds.includes(id)).map(cid =>
+            fetchAuth(`${API_BASE}/collection-items/${existingItemMap[cid]}`, { method: 'DELETE' }))
+        );
+        // Add to newly selected collections
+        await Promise.all(
+          collIds.filter(id => !existingCollIds.includes(id)).map(cid =>
+            fetchAuth(`${API_BASE}/collection-items`, { method: 'POST', body: JSON.stringify({ collectionId: cid, movieId, sortOrder: 99 }) }))
+        );
+      } catch (e) { console.error('Collection sync error:', e); }
     },
   });
   const [currentStep, setCurrentStep] = useState(0);
@@ -83,6 +117,16 @@ const MovieWizard: React.FC<{ isEdit?: boolean }> = ({ isEdit }) => {
       .catch(() => {});
   }, []);
 
+  // Fetch collection options
+  useEffect(() => {
+    fetchAuth(`${API_BASE}/collections?_limit=200`)
+      .then(r => r.json())
+      .then((data: any[]) => setCollectionOptions(
+        data.map(c => ({ value: c.id, label: c.title?.ru || c.title?.uz || c.slug || '—' }))
+      ))
+      .catch(() => {});
+  }, []);
+
   // Load existing genres in edit mode
   const editId = (queryResult as any)?.data?.data?.id;
   useEffect(() => {
@@ -94,6 +138,25 @@ const MovieWizard: React.FC<{ isEdit?: boolean }> = ({ isEdit }) => {
           genresReadyRef.current = true;
         })
         .catch(() => { genresReadyRef.current = true; });
+    }
+  }, [isEdit, editId]);
+
+  // Load existing collections in edit mode
+  useEffect(() => {
+    if (isEdit && editId) {
+      fetchAuth(`${API_BASE}/collections?_limit=200`)
+        .then(r => r.json())
+        .then(async (allColls: any[]) => {
+          const linked: string[] = [];
+          for (const coll of allColls) {
+            const itemsRes = await fetchAuth(`${API_BASE}/collection-items/${coll.id}`);
+            const items: any[] = await itemsRes.json();
+            if (items.some((it: any) => it.movieId === editId)) linked.push(coll.id);
+          }
+          setSelectedCollectionIds(linked);
+          collectionsReadyRef.current = true;
+        })
+        .catch(() => { collectionsReadyRef.current = true; });
     }
   }, [isEdit, editId]);
 
@@ -303,6 +366,27 @@ const MovieWizard: React.FC<{ isEdit?: boolean }> = ({ isEdit }) => {
                 </Card>
               </Col>
             </Row>
+            <div style={{ marginTop: 24 }}>
+              <Title level={5}>Блоки главной страницы</Title>
+              <Paragraph type="secondary">Выберите, в каких блоках на главной странице будет отображаться этот фильм.</Paragraph>
+              <Select
+                mode="multiple"
+                placeholder="Выберите блоки..."
+                value={selectedCollectionIds}
+                onChange={setSelectedCollectionIds}
+                options={collectionOptions}
+                style={{ width: '100%' }}
+                size="large"
+                optionFilterProp="label"
+                showSearch
+                notFoundContent="Нет блоков. Создайте их в разделе «Блоки главной»."
+              />
+              {selectedCollectionIds.length > 0 && (
+                <div style={{ marginTop: 8 }}>
+                  <Text type="secondary">Выбрано блоков: {selectedCollectionIds.length}</Text>
+                </div>
+              )}
+            </div>
           </Card>
         </div>
 

@@ -93,13 +93,12 @@
         html += mkSec('Продолжить просмотр', 'hc-cw');
       }
 
-      // Collections from API
-      if (data.collections) {
-        data.collections.forEach(coll => {
-          const carId = 'hc-' + coll.slug.replace(/[^a-z0-9]/g, '');
-          html += mkSec(coll.title, carId);
-        });
-      }
+      // Collections from API — skip empty ones
+      var visibleCollections = (data.collections || []).filter(coll => coll.items && coll.items.length > 0);
+      visibleCollections.forEach(coll => {
+        const carId = 'hc-' + coll.slug.replace(/[^a-z0-9]/g, '');
+        html += mkSec(coll.title, carId);
+      });
 
       el.innerHTML = html;
 
@@ -111,13 +110,11 @@
       }
 
       // Render collection items
-      if (data.collections) {
-        data.collections.forEach((coll, idx) => {
-          const carId = 'hc-' + coll.slug.replace(/[^a-z0-9]/g, '');
-          const badge = coll.slug === 'trending' ? 'top' : coll.slug === 'new' ? 'new' : '';
-          renderCards(carId, coll.items, badge);
-        });
-      }
+      visibleCollections.forEach((coll, idx) => {
+        const carId = 'hc-' + coll.slug.replace(/[^a-z0-9]/g, '');
+        const badge = coll.slug === 'trending' ? 'top' : coll.slug === 'new' ? 'new' : '';
+        renderCards(carId, coll.items, badge);
+      });
 
       // Hero slider — build slides and start auto-play
       if (data.hero && data.hero.length > 0) {

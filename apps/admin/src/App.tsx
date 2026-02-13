@@ -7,7 +7,7 @@ import { ConfigProvider, theme, App as AntApp } from 'antd';
 import {
   PlayCircleOutlined, VideoCameraOutlined, TagOutlined,
   TeamOutlined, UserOutlined, BellOutlined, DashboardOutlined,
-  SettingOutlined,
+  SettingOutlined, AppstoreOutlined,
 } from '@ant-design/icons';
 
 import '@refinedev/antd/dist/reset.css';
@@ -96,6 +96,13 @@ const AppContent: React.FC = () => {
                 list: '/notifications',
                 create: '/notifications/create',
                 meta: { label: 'Уведомления', icon: <BellOutlined /> },
+              },
+              {
+                name: 'collections',
+                list: '/collections',
+                create: '/collections/create',
+                edit: '/collections/edit/:id',
+                meta: { label: 'Блоки главной', icon: <AppstoreOutlined /> },
               },
               {
                 name: 'settings',
