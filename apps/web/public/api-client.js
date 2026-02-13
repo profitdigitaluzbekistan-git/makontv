@@ -130,30 +130,45 @@
   };
 
   function updateHero(item) {
-    // Update hero section with real data
-    const heroTitle = document.querySelector('.hero-t');
-    const heroDesc = document.querySelector('.hero-d');
-    const heroBadges = document.querySelector('.hero-badges');
+    // Update hero section with real data (selectors match actual HTML classes)
+    const heroTitle = document.querySelector('.h-title');
+    const heroDesc = document.querySelector('.h-desc');
+    const heroMeta = document.querySelector('.h-meta');
 
     if (heroTitle) heroTitle.textContent = item.title || '';
     if (heroDesc) heroDesc.textContent = item.shortDesc || item.description || '';
-    if (heroBadges) {
-      heroBadges.innerHTML = [
-        item.year ? `<span class="hero-b">${item.year}</span>` : '',
-        item.ageRating ? `<span class="hero-b">${item.ageRating}</span>` : '',
-        item.quality ? `<span class="hero-b">${item.quality}</span>` : '',
-        item.rating ? `<span class="hero-b">★ ${item.rating}</span>` : '',
+    if (heroMeta) {
+      heroMeta.innerHTML = [
+        item.rating ? `<span class="h-rating">${item.rating}</span>` : '',
+        item.year ? `<span class="h-mt">${item.year}</span>` : '',
+        item.ageRating ? `<span class="h-dot"></span><span class="h-mt">${item.ageRating}</span>` : '',
+        item.durationMin ? `<span class="h-dot"></span><span class="h-mt">${item.durationMin} мин</span>` : '',
+        item.quality ? `<span class="h-dot"></span><span class="h-mt">${item.quality}</span>` : '',
       ].filter(Boolean).join('');
     }
 
-    // Update backdrop
-    if (item.backdropUrl) {
-      const heroEl = document.querySelector('.hero');
-      if (heroEl) {
-        heroEl.style.backgroundImage = `url(${item.backdropUrl})`;
-        heroEl.style.backgroundSize = 'cover';
-        heroEl.style.backgroundPosition = 'center';
+    // Update backdrop / poster
+    const heroBg = document.querySelector('.hero-bg');
+    if (heroBg) {
+      const bgUrl = item.backdropUrl || item.posterUrl;
+      if (bgUrl) {
+        heroBg.style.backgroundImage = `url(${bgUrl})`;
+        heroBg.style.backgroundSize = 'cover';
+        heroBg.style.backgroundPosition = 'center';
       }
+    }
+
+    // Update "Смотреть" and "Подробнее" buttons to navigate to the right movie
+    const clickPage = item.type === 'series' ? 'series-detail' : 'detail';
+    const heroActions = document.querySelector('.h-act');
+    if (heroActions) {
+      const buttons = heroActions.querySelectorAll('button');
+      buttons.forEach(btn => {
+        const text = btn.textContent.trim();
+        if (text.includes('Смотреть') || text.includes('Подробнее')) {
+          btn.onclick = function() { MakonAPI.goDetail(clickPage, item.slug); };
+        }
+      });
     }
 
     // Store current movie slug for "Watch" button
@@ -301,35 +316,59 @@
   function loadMovieDetail(slug) {
     api(`/api/movies/${slug}`).then(movie => {
       // Update title
-      const titleEl = document.querySelector('#page-detail .hero-t, #page-detail .det-t');
+      const titleEl = document.querySelector('#page-detail .d-title');
       if (titleEl) titleEl.textContent = movie.title;
 
-      // Update description
-      const descEl = document.querySelector('#page-detail .det-desc, #page-detail .hero-d');
-      if (descEl) descEl.textContent = movie.description;
+      // Update breadcrumb
+      const breadLast = document.querySelector('#page-detail .bread-in');
+      if (breadLast) {
+        const spans = breadLast.querySelectorAll('span:last-child');
+        if (spans.length) spans[spans.length - 1].textContent = movie.title;
+      }
 
-      // Update badges
-      const badgesEl = document.querySelector('#page-detail .hero-badges, #page-detail .det-badges');
-      if (badgesEl) {
-        badgesEl.innerHTML = [
-          movie.year ? `<span class="hero-b">${movie.year}</span>` : '',
-          movie.ageRating ? `<span class="hero-b">${movie.ageRating}</span>` : '',
-          movie.durationMin ? `<span class="hero-b">${movie.durationMin} мин</span>` : '',
-          movie.quality ? `<span class="hero-b">${movie.quality}</span>` : '',
-          movie.rating ? `<span class="hero-b">★ ${movie.rating}</span>` : '',
+      // Update description
+      const descEl = document.querySelector('#page-detail .d-desc, #page-detail #dDesc');
+      if (descEl) descEl.textContent = movie.description || movie.shortDesc || '';
+
+      // Update about description
+      const aboutDesc = document.querySelector('#page-detail .about-desc');
+      if (aboutDesc) aboutDesc.textContent = movie.description || '';
+
+      // Update meta badges
+      const metaEl = document.querySelector('#page-detail .d-meta');
+      if (metaEl) {
+        metaEl.innerHTML = [
+          movie.rating ? `<span class="d-rating">${movie.rating}</span>` : '',
+          movie.year ? `<span class="d-mt">${movie.year}</span>` : '',
+          movie.durationMin ? `<span class="d-dot"></span><span class="d-mt">${movie.durationMin} мин</span>` : '',
+          movie.ageRating ? `<span class="d-dot"></span><span class="d-mt">${movie.ageRating}</span>` : '',
         ].filter(Boolean).join('');
       }
 
+      // Update genre chips
+      const chipsEl = document.querySelector('#page-detail .d-chips');
+      if (chipsEl && movie.genres && movie.genres.length > 0) {
+        chipsEl.innerHTML = movie.genres.map(g => `<div class="d-chip">${g.name}</div>`).join('');
+      }
+
+      // Update backdrop
+      const heroBgEl = document.querySelector('#page-detail .d-hero-bg-i');
+      if (heroBgEl && (movie.backdropUrl || movie.posterUrl)) {
+        heroBgEl.style.backgroundImage = `url(${movie.backdropUrl || movie.posterUrl})`;
+        heroBgEl.style.backgroundSize = 'cover';
+        heroBgEl.style.backgroundPosition = 'center';
+      }
+
       // Update "О фильме" section
-      const infoGrid = document.querySelector('#page-detail .info-grid');
-      if (infoGrid) {
-        infoGrid.innerHTML = `
-          <div class="info-item"><span class="info-l">Год</span><span class="info-v">${movie.year || '—'}</span></div>
-          <div class="info-item"><span class="info-l">Страна</span><span class="info-v">${movie.country || '—'}</span></div>
-          <div class="info-item"><span class="info-l">Жанр</span><span class="info-v">${(movie.genres || []).map(g => g.name).join(', ') || '—'}</span></div>
-          <div class="info-item"><span class="info-l">Длительность</span><span class="info-v">${movie.durationMin ? movie.durationMin + ' мин' : '—'}</span></div>
-          <div class="info-item"><span class="info-l">Качество</span><span class="info-v">${movie.quality || 'HD'}</span></div>
-          <div class="info-item"><span class="info-l">Возраст</span><span class="info-v">${movie.ageRating || '—'}</span></div>
+      const aboutDets = document.querySelector('#page-detail .about-dets');
+      if (aboutDets) {
+        aboutDets.innerHTML = `
+          <div class="about-r"><span class="about-l">Год</span><span class="about-v">${movie.year || '—'}</span></div>
+          <div class="about-r"><span class="about-l">Страна</span><span class="about-v">${movie.country || '—'}</span></div>
+          <div class="about-r"><span class="about-l">Жанр</span><span class="about-v">${(movie.genres || []).map(g => g.name).join(', ') || '—'}</span></div>
+          <div class="about-r"><span class="about-l">Длительность</span><span class="about-v">${movie.durationMin ? movie.durationMin + ' мин' : '—'}</span></div>
+          <div class="about-r"><span class="about-l">Качество</span><span class="about-v">${movie.quality || 'HD'}</span></div>
+          <div class="about-r"><span class="about-l">Возраст</span><span class="about-v">${movie.ageRating || '—'}</span></div>
         `;
       }
 
@@ -377,23 +416,63 @@
   function loadSeriesDetail(slug) {
     api(`/api/series/${slug}`).then(show => {
       // Title
-      const titleEl = document.querySelector('#page-series-detail .hero-t, #page-series-detail .det-t');
+      const titleEl = document.querySelector('#page-series-detail .d-title');
       if (titleEl) titleEl.textContent = show.title;
 
-      // Description
-      const descEl = document.querySelector('#page-series-detail .det-desc, #page-series-detail .hero-d');
-      if (descEl) descEl.textContent = show.description;
+      // Breadcrumb
+      const breadLast = document.querySelector('#page-series-detail .bread-in');
+      if (breadLast) {
+        const spans = breadLast.querySelectorAll('span:last-child');
+        if (spans.length) spans[spans.length - 1].textContent = show.title;
+      }
 
-      // Badges
-      const badgesEl = document.querySelector('#page-series-detail .hero-badges, #page-series-detail .det-badges');
-      if (badgesEl) {
-        badgesEl.innerHTML = [
-          show.year ? `<span class="hero-b">${show.year}</span>` : '',
-          show.ageRating ? `<span class="hero-b">${show.ageRating}</span>` : '',
-          show.quality ? `<span class="hero-b">${show.quality}</span>` : '',
-          show.rating ? `<span class="hero-b">★ ${show.rating}</span>` : '',
-          show.seasons ? `<span class="hero-b">${show.seasons.length} сезон</span>` : '',
+      // Description
+      const descEl = document.querySelector('#page-series-detail .d-desc');
+      if (descEl) descEl.textContent = show.description || show.shortDesc || '';
+
+      // About description
+      const aboutDesc = document.querySelector('#page-series-detail .about-desc');
+      if (aboutDesc) aboutDesc.textContent = show.description || '';
+
+      // Meta badges
+      const metaEl = document.querySelector('#page-series-detail .d-meta');
+      if (metaEl) {
+        const seasonCount = show.seasons ? show.seasons.length : 0;
+        const episodeCount = show.seasons ? show.seasons.reduce((sum, s) => sum + (s.episodes ? s.episodes.length : 0), 0) : 0;
+        metaEl.innerHTML = [
+          show.rating ? `<span class="d-rating">${show.rating}</span>` : '',
+          show.year ? `<span class="d-mt">${show.year}</span>` : '',
+          seasonCount ? `<span class="d-dot"></span><span class="d-mt">Сезон ${seasonCount}</span>` : '',
+          episodeCount ? `<span class="d-dot"></span><span class="d-mt">${episodeCount} серий</span>` : '',
+          show.ageRating ? `<span class="d-dot"></span><span class="d-mt">${show.ageRating}</span>` : '',
         ].filter(Boolean).join('');
+      }
+
+      // Genre chips
+      const chipsEl = document.querySelector('#page-series-detail .d-chips');
+      if (chipsEl && show.genres && show.genres.length > 0) {
+        chipsEl.innerHTML = show.genres.map(g => `<div class="d-chip">${g.name}</div>`).join('');
+      }
+
+      // Hero background
+      const heroBgEl = document.querySelector('#page-series-detail .d-hero-bg-i');
+      if (heroBgEl && (show.backdropUrl || show.posterUrl)) {
+        heroBgEl.style.backgroundImage = `url(${show.backdropUrl || show.posterUrl})`;
+        heroBgEl.style.backgroundSize = 'cover';
+        heroBgEl.style.backgroundPosition = 'center';
+      }
+
+      // About details
+      const aboutDets = document.querySelector('#page-series-detail .about-dets');
+      if (aboutDets) {
+        const genreNames = (show.genres || []).map(g => g.name).join(', ') || '—';
+        const castNames = (show.cast || []).map(c => c.name).join(', ') || '—';
+        aboutDets.innerHTML = `
+          <div class="about-r"><span class="about-l">Год</span><span class="about-v">${show.year || '—'}</span></div>
+          <div class="about-r"><span class="about-l">Страна</span><span class="about-v">${show.country || 'Узбекистан'}</span></div>
+          <div class="about-r"><span class="about-l">Жанр</span><span class="about-v">${genreNames}</span></div>
+          <div class="about-r"><span class="about-l">В ролях</span><span class="about-v">${castNames}</span></div>
+        `;
       }
 
       // Store seasons data globally for season switcher
@@ -417,7 +496,7 @@
 
   function buildSeasonsFromAPI(seasonsData) {
     // Season selector
-    const selEl = document.querySelector('#page-series-detail .season-sel, .season-tabs');
+    const selEl = document.querySelector('#page-series-detail .ep-season-sel, #epSeasonSel');
     if (selEl) {
       selEl.innerHTML = seasonsData.map((s, i) =>
         `<button class="season-btn ${i === 0 ? 'active' : ''}" onclick="MakonAPI.switchSeason(${i})">${s.title || 'Сезон ' + s.number}</button>`
@@ -431,7 +510,7 @@
   }
 
   function renderEpisodesFromAPI(episodes) {
-    const grid = document.querySelector('#page-series-detail .ep-grid, .episodes-grid');
+    const grid = document.querySelector('#page-series-detail .ep-grid, #epGrid');
     if (!grid) return;
 
     grid.innerHTML = episodes.map((ep, i) => {

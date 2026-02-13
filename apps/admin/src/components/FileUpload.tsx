@@ -63,10 +63,17 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         setUrlInput(data.url);
         message.success('Файл загружен');
       } else {
-        message.error(data.error || 'Ошибка загрузки');
+        const errMsg = data.error || 'Ошибка загрузки';
+        if (errMsg.includes('not configured') || errMsg.includes('S3') || errMsg.includes('R2') || res.status === 501 || res.status === 503) {
+          message.warning('Хранилище не настроено. Используйте вкладку «URL» для вставки ссылки.');
+          setActiveTab('url');
+        } else {
+          message.error(errMsg);
+        }
       }
     } catch (err: any) {
-      message.error(`Ошибка: ${err.message}`);
+      message.error('Хранилище не настроено или недоступно. Используйте вкладку «URL».');
+      setActiveTab('url');
     } finally {
       setUploading(false);
       setProgress(0);
@@ -98,7 +105,13 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 
       const presignData = await presignRes.json();
       if (!presignRes.ok) {
-        message.error(presignData.error || 'Не удалось получить URL для загрузки');
+        const errMsg = presignData.error || 'Не удалось получить URL для загрузки';
+        if (errMsg.includes('not configured') || errMsg.includes('S3') || errMsg.includes('R2') || presignRes.status === 501 || presignRes.status === 503) {
+          message.warning('Хранилище не настроено. Используйте вкладку «URL» для вставки ссылки.');
+          setActiveTab('url');
+        } else {
+          message.error(errMsg);
+        }
         return false;
       }
 
