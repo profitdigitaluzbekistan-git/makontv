@@ -44409,7 +44409,7 @@ usersV2.delete("/:id/downloads/:did", async (c4) => {
 usersV2.post("/broadcast/notifications", async (c4) => {
   const db = getDb();
   const secret = c4.req.header("X-Admin-Secret");
-  const expected = process.env.ADMIN_SECRET || "changeme-makontv-admin-2025";
+  const expected = "changeme-makontv-admin-2025";
   if (secret !== expected) return c4.json({ error: "Unauthorized" }, 401);
   const body = await c4.req.json();
   const allUsers = await db.select({ id: users.id }).from(users).where(eq2(users.isBlocked, false));
@@ -45477,7 +45477,7 @@ var subscriptions_default = subscriptions;
 // apps/api/src/middleware/admin.ts
 var adminGuard = async (c4, next) => {
   const secret = c4.req.header("X-Admin-Secret");
-  const expected = process.env.ADMIN_SECRET || "changeme-makontv-admin-2025";
+  const expected = "changeme-makontv-admin-2025";
   if (!secret || secret !== expected) {
     return c4.json({ error: "Unauthorized. Provide X-Admin-Secret header." }, 401);
   }

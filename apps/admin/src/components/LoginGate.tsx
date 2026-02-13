@@ -22,7 +22,8 @@ export const LoginGate: React.FC<{ children: React.ReactNode }> = ({ children })
   const handleLogin = async () => {
     // Test the secret against API
     try {
-      const res = await fetch('/admin/stats', {
+      const apiBase = import.meta.env.VITE_API_URL || '';
+      const res = await fetch(`${apiBase}/admin/stats`, {
         headers: { 'X-Admin-Secret': secret },
       });
       if (res.ok) {
