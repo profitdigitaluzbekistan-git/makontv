@@ -127,8 +127,8 @@ var require_dist_cjs2 = __commonJS({
     var types2 = require_dist_cjs();
     var getHttpHandlerExtensionConfiguration4 = (runtimeConfig) => {
       return {
-        setHttpHandler(handler) {
-          runtimeConfig.httpHandler = handler;
+        setHttpHandler(handler2) {
+          runtimeConfig.httpHandler = handler2;
         },
         httpHandler() {
           return runtimeConfig.httpHandler;
@@ -2161,8 +2161,8 @@ or increase socketAcquisitionWarningTimeout=(millis) in the NodeHttpHandler conf
         this.sessionCache.set(authority, existingConnectionPool);
       }
       release(requestContext, session) {
-        const cacheKey2 = this.getUrlString(requestContext);
-        this.sessionCache.get(cacheKey2)?.offerLast(session);
+        const cacheKey = this.getUrlString(requestContext);
+        this.sessionCache.get(cacheKey)?.offerLast(session);
       }
       destroy() {
         for (const [key, connectionPool] of this.sessionCache) {
@@ -6623,11 +6623,11 @@ var require_dist_cjs18 = __commonJS({
     var createScope = (shortDate, region, service) => `${shortDate}/${region}/${service}/${KEY_TYPE_IDENTIFIER}`;
     var getSigningKey = async (sha256Constructor, credentials, shortDate, region, service) => {
       const credsHash = await hmac(sha256Constructor, credentials.secretAccessKey, credentials.accessKeyId);
-      const cacheKey2 = `${shortDate}:${region}:${service}:${utilHexEncoding.toHex(credsHash)}:${credentials.sessionToken}`;
-      if (cacheKey2 in signingKeyCache) {
-        return signingKeyCache[cacheKey2];
+      const cacheKey = `${shortDate}:${region}:${service}:${utilHexEncoding.toHex(credsHash)}:${credentials.sessionToken}`;
+      if (cacheKey in signingKeyCache) {
+        return signingKeyCache[cacheKey];
       }
-      cacheQueue.push(cacheKey2);
+      cacheQueue.push(cacheKey);
       while (cacheQueue.length > MAX_CACHE_SIZE) {
         delete signingKeyCache[cacheQueue.shift()];
       }
@@ -6635,12 +6635,12 @@ var require_dist_cjs18 = __commonJS({
       for (const signable of [shortDate, region, service, KEY_TYPE_IDENTIFIER]) {
         key = await hmac(sha256Constructor, key, signable);
       }
-      return signingKeyCache[cacheKey2] = key;
+      return signingKeyCache[cacheKey] = key;
     };
     var clearCredentialCache = () => {
       cacheQueue.length = 0;
-      Object.keys(signingKeyCache).forEach((cacheKey2) => {
-        delete signingKeyCache[cacheKey2];
+      Object.keys(signingKeyCache).forEach((cacheKey) => {
+        delete signingKeyCache[cacheKey];
       });
     };
     var hmac = (ctor, secret, data2) => {
@@ -8528,14 +8528,14 @@ var require_dist_cjs19 = __commonJS({
             identifyOnResolve = toggle;
           return identifyOnResolve;
         },
-        resolve: (handler, context) => {
+        resolve: (handler2, context) => {
           for (const middleware of getMiddlewareList().map((entry) => entry.middleware).reverse()) {
-            handler = middleware(handler, context);
+            handler2 = middleware(handler2, context);
           }
           if (identifyOnResolve) {
             console.log(stack.identify());
           }
-          return handler;
+          return handler2;
         }
       };
       return stack;
@@ -8583,27 +8583,27 @@ var require_dist_cjs20 = __commonJS({
         const options = typeof optionsOrCb !== "function" ? optionsOrCb : void 0;
         const callback = typeof optionsOrCb === "function" ? optionsOrCb : cb;
         const useHandlerCache = options === void 0 && this.config.cacheMiddleware === true;
-        let handler;
+        let handler2;
         if (useHandlerCache) {
           if (!this.handlers) {
             this.handlers = /* @__PURE__ */ new WeakMap();
           }
           const handlers = this.handlers;
           if (handlers.has(command.constructor)) {
-            handler = handlers.get(command.constructor);
+            handler2 = handlers.get(command.constructor);
           } else {
-            handler = command.resolveMiddleware(this.middlewareStack, this.config, options);
-            handlers.set(command.constructor, handler);
+            handler2 = command.resolveMiddleware(this.middlewareStack, this.config, options);
+            handlers.set(command.constructor, handler2);
           }
         } else {
           delete this.handlers;
-          handler = command.resolveMiddleware(this.middlewareStack, this.config, options);
+          handler2 = command.resolveMiddleware(this.middlewareStack, this.config, options);
         }
         if (callback) {
-          handler(command).then((result) => callback(null, result.output), (err) => callback(err)).catch(() => {
+          handler2(command).then((result) => callback(null, result.output), (err) => callback(err)).catch(() => {
           });
         } else {
-          return handler(command).then((result) => result.output);
+          return handler2(command).then((result) => result.output);
         }
       }
       destroy() {
@@ -24078,7 +24078,7 @@ var require_dist_cjs52 = __commonJS({
     var utilBufferFrom = require_dist_cjs7();
     var utilUtf8 = require_dist_cjs8();
     var buffer = require("buffer");
-    var crypto3 = require("crypto");
+    var crypto2 = require("crypto");
     var Hash4 = class {
       algorithmIdentifier;
       secret;
@@ -24095,7 +24095,7 @@ var require_dist_cjs52 = __commonJS({
         return Promise.resolve(this.hash.digest());
       }
       reset() {
-        this.hash = this.secret ? crypto3.createHmac(this.algorithmIdentifier, castSourceData(this.secret)) : crypto3.createHash(this.algorithmIdentifier);
+        this.hash = this.secret ? crypto2.createHmac(this.algorithmIdentifier, castSourceData(this.secret)) : crypto2.createHash(this.algorithmIdentifier);
       }
     };
     function castSourceData(toCast, encoding) {
@@ -32400,8 +32400,8 @@ var require_dist_cjs74 = __commonJS({
         toMiddleware: "awsAuthMiddleware",
         override: true
       });
-      const handler = command.resolveMiddleware(clientStack, client.config, {});
-      const { output } = await handler({ input: command.input });
+      const handler2 = command.resolveMiddleware(clientStack, client.config, {});
+      const { output } = await handler2({ input: command.input });
       const { presigned } = output;
       return utilFormatUrl.formatUrl(presigned);
     };
@@ -32413,544 +32413,9 @@ var require_dist_cjs74 = __commonJS({
 // apps/api/src/vercel.ts
 var vercel_exports = {};
 __export(vercel_exports, {
-  default: () => vercel_default
+  default: () => handler
 });
 module.exports = __toCommonJS(vercel_exports);
-
-// node_modules/@hono/node-server/dist/vercel.mjs
-var import_http2 = require("http2");
-var import_http22 = require("http2");
-var import_stream = require("stream");
-var import_crypto = __toESM(require("crypto"), 1);
-var RequestError = class extends Error {
-  constructor(message, options) {
-    super(message, options);
-    this.name = "RequestError";
-  }
-};
-var toRequestError = (e4) => {
-  if (e4 instanceof RequestError) {
-    return e4;
-  }
-  return new RequestError(e4.message, { cause: e4 });
-};
-var GlobalRequest = global.Request;
-var Request2 = class extends GlobalRequest {
-  constructor(input, options) {
-    if (typeof input === "object" && getRequestCache in input) {
-      input = input[getRequestCache]();
-    }
-    if (typeof options?.body?.getReader !== "undefined") {
-      ;
-      options.duplex ??= "half";
-    }
-    super(input, options);
-  }
-};
-var newHeadersFromIncoming = (incoming) => {
-  const headerRecord = [];
-  const rawHeaders = incoming.rawHeaders;
-  for (let i4 = 0; i4 < rawHeaders.length; i4 += 2) {
-    const { [i4]: key, [i4 + 1]: value } = rawHeaders;
-    if (key.charCodeAt(0) !== /*:*/
-    58) {
-      headerRecord.push([key, value]);
-    }
-  }
-  return new Headers(headerRecord);
-};
-var wrapBodyStream = /* @__PURE__ */ Symbol("wrapBodyStream");
-var newRequestFromIncoming = (method, url, headers, incoming, abortController) => {
-  const init = {
-    method,
-    headers,
-    signal: abortController.signal
-  };
-  if (method === "TRACE") {
-    init.method = "GET";
-    const req = new Request2(url, init);
-    Object.defineProperty(req, "method", {
-      get() {
-        return "TRACE";
-      }
-    });
-    return req;
-  }
-  if (!(method === "GET" || method === "HEAD")) {
-    if ("rawBody" in incoming && incoming.rawBody instanceof Buffer) {
-      init.body = new ReadableStream({
-        start(controller) {
-          controller.enqueue(incoming.rawBody);
-          controller.close();
-        }
-      });
-    } else if (incoming[wrapBodyStream]) {
-      let reader;
-      init.body = new ReadableStream({
-        async pull(controller) {
-          try {
-            reader ||= import_stream.Readable.toWeb(incoming).getReader();
-            const { done, value } = await reader.read();
-            if (done) {
-              controller.close();
-            } else {
-              controller.enqueue(value);
-            }
-          } catch (error2) {
-            controller.error(error2);
-          }
-        }
-      });
-    } else {
-      init.body = import_stream.Readable.toWeb(incoming);
-    }
-  }
-  return new Request2(url, init);
-};
-var getRequestCache = /* @__PURE__ */ Symbol("getRequestCache");
-var requestCache = /* @__PURE__ */ Symbol("requestCache");
-var incomingKey = /* @__PURE__ */ Symbol("incomingKey");
-var urlKey = /* @__PURE__ */ Symbol("urlKey");
-var headersKey = /* @__PURE__ */ Symbol("headersKey");
-var abortControllerKey = /* @__PURE__ */ Symbol("abortControllerKey");
-var getAbortController = /* @__PURE__ */ Symbol("getAbortController");
-var requestPrototype = {
-  get method() {
-    return this[incomingKey].method || "GET";
-  },
-  get url() {
-    return this[urlKey];
-  },
-  get headers() {
-    return this[headersKey] ||= newHeadersFromIncoming(this[incomingKey]);
-  },
-  [getAbortController]() {
-    this[getRequestCache]();
-    return this[abortControllerKey];
-  },
-  [getRequestCache]() {
-    this[abortControllerKey] ||= new AbortController();
-    return this[requestCache] ||= newRequestFromIncoming(
-      this.method,
-      this[urlKey],
-      this.headers,
-      this[incomingKey],
-      this[abortControllerKey]
-    );
-  }
-};
-[
-  "body",
-  "bodyUsed",
-  "cache",
-  "credentials",
-  "destination",
-  "integrity",
-  "mode",
-  "redirect",
-  "referrer",
-  "referrerPolicy",
-  "signal",
-  "keepalive"
-].forEach((k4) => {
-  Object.defineProperty(requestPrototype, k4, {
-    get() {
-      return this[getRequestCache]()[k4];
-    }
-  });
-});
-["arrayBuffer", "blob", "clone", "formData", "json", "text"].forEach((k4) => {
-  Object.defineProperty(requestPrototype, k4, {
-    value: function() {
-      return this[getRequestCache]()[k4]();
-    }
-  });
-});
-Object.setPrototypeOf(requestPrototype, Request2.prototype);
-var newRequest = (incoming, defaultHostname) => {
-  const req = Object.create(requestPrototype);
-  req[incomingKey] = incoming;
-  const incomingUrl = incoming.url || "";
-  if (incomingUrl[0] !== "/" && // short-circuit for performance. most requests are relative URL.
-  (incomingUrl.startsWith("http://") || incomingUrl.startsWith("https://"))) {
-    if (incoming instanceof import_http22.Http2ServerRequest) {
-      throw new RequestError("Absolute URL for :path is not allowed in HTTP/2");
-    }
-    try {
-      const url2 = new URL(incomingUrl);
-      req[urlKey] = url2.href;
-    } catch (e4) {
-      throw new RequestError("Invalid absolute URL", { cause: e4 });
-    }
-    return req;
-  }
-  const host = (incoming instanceof import_http22.Http2ServerRequest ? incoming.authority : incoming.headers.host) || defaultHostname;
-  if (!host) {
-    throw new RequestError("Missing host header");
-  }
-  let scheme;
-  if (incoming instanceof import_http22.Http2ServerRequest) {
-    scheme = incoming.scheme;
-    if (!(scheme === "http" || scheme === "https")) {
-      throw new RequestError("Unsupported scheme");
-    }
-  } else {
-    scheme = incoming.socket && incoming.socket.encrypted ? "https" : "http";
-  }
-  const url = new URL(`${scheme}://${host}${incomingUrl}`);
-  if (url.hostname.length !== host.length && url.hostname !== host.replace(/:\d+$/, "")) {
-    throw new RequestError("Invalid host header");
-  }
-  req[urlKey] = url.href;
-  return req;
-};
-var responseCache = /* @__PURE__ */ Symbol("responseCache");
-var getResponseCache = /* @__PURE__ */ Symbol("getResponseCache");
-var cacheKey = /* @__PURE__ */ Symbol("cache");
-var GlobalResponse = global.Response;
-var Response2 = class _Response {
-  #body;
-  #init;
-  [getResponseCache]() {
-    delete this[cacheKey];
-    return this[responseCache] ||= new GlobalResponse(this.#body, this.#init);
-  }
-  constructor(body, init) {
-    let headers;
-    this.#body = body;
-    if (init instanceof _Response) {
-      const cachedGlobalResponse = init[responseCache];
-      if (cachedGlobalResponse) {
-        this.#init = cachedGlobalResponse;
-        this[getResponseCache]();
-        return;
-      } else {
-        this.#init = init.#init;
-        headers = new Headers(init.#init.headers);
-      }
-    } else {
-      this.#init = init;
-    }
-    if (typeof body === "string" || typeof body?.getReader !== "undefined" || body instanceof Blob || body instanceof Uint8Array) {
-      headers ||= init?.headers || { "content-type": "text/plain; charset=UTF-8" };
-      this[cacheKey] = [init?.status || 200, body, headers];
-    }
-  }
-  get headers() {
-    const cache4 = this[cacheKey];
-    if (cache4) {
-      if (!(cache4[2] instanceof Headers)) {
-        cache4[2] = new Headers(cache4[2]);
-      }
-      return cache4[2];
-    }
-    return this[getResponseCache]().headers;
-  }
-  get status() {
-    return this[cacheKey]?.[0] ?? this[getResponseCache]().status;
-  }
-  get ok() {
-    const status = this.status;
-    return status >= 200 && status < 300;
-  }
-};
-["body", "bodyUsed", "redirected", "statusText", "trailers", "type", "url"].forEach((k4) => {
-  Object.defineProperty(Response2.prototype, k4, {
-    get() {
-      return this[getResponseCache]()[k4];
-    }
-  });
-});
-["arrayBuffer", "blob", "clone", "formData", "json", "text"].forEach((k4) => {
-  Object.defineProperty(Response2.prototype, k4, {
-    value: function() {
-      return this[getResponseCache]()[k4]();
-    }
-  });
-});
-Object.setPrototypeOf(Response2, GlobalResponse);
-Object.setPrototypeOf(Response2.prototype, GlobalResponse.prototype);
-async function readWithoutBlocking(readPromise) {
-  return Promise.race([readPromise, Promise.resolve().then(() => Promise.resolve(void 0))]);
-}
-function writeFromReadableStreamDefaultReader(reader, writable, currentReadPromise) {
-  const cancel = (error2) => {
-    reader.cancel(error2).catch(() => {
-    });
-  };
-  writable.on("close", cancel);
-  writable.on("error", cancel);
-  (currentReadPromise ?? reader.read()).then(flow, handleStreamError);
-  return reader.closed.finally(() => {
-    writable.off("close", cancel);
-    writable.off("error", cancel);
-  });
-  function handleStreamError(error2) {
-    if (error2) {
-      writable.destroy(error2);
-    }
-  }
-  function onDrain() {
-    reader.read().then(flow, handleStreamError);
-  }
-  function flow({ done, value }) {
-    try {
-      if (done) {
-        writable.end();
-      } else if (!writable.write(value)) {
-        writable.once("drain", onDrain);
-      } else {
-        return reader.read().then(flow, handleStreamError);
-      }
-    } catch (e4) {
-      handleStreamError(e4);
-    }
-  }
-}
-function writeFromReadableStream(stream, writable) {
-  if (stream.locked) {
-    throw new TypeError("ReadableStream is locked.");
-  } else if (writable.destroyed) {
-    return;
-  }
-  return writeFromReadableStreamDefaultReader(stream.getReader(), writable);
-}
-var buildOutgoingHttpHeaders = (headers) => {
-  const res = {};
-  if (!(headers instanceof Headers)) {
-    headers = new Headers(headers ?? void 0);
-  }
-  const cookies = [];
-  for (const [k4, v4] of headers) {
-    if (k4 === "set-cookie") {
-      cookies.push(v4);
-    } else {
-      res[k4] = v4;
-    }
-  }
-  if (cookies.length > 0) {
-    res["set-cookie"] = cookies;
-  }
-  res["content-type"] ??= "text/plain; charset=UTF-8";
-  return res;
-};
-var X_ALREADY_SENT = "x-hono-already-sent";
-if (typeof global.crypto === "undefined") {
-  global.crypto = import_crypto.default;
-}
-var outgoingEnded = /* @__PURE__ */ Symbol("outgoingEnded");
-var handleRequestError = () => new Response(null, {
-  status: 400
-});
-var handleFetchError = (e4) => new Response(null, {
-  status: e4 instanceof Error && (e4.name === "TimeoutError" || e4.constructor.name === "TimeoutError") ? 504 : 500
-});
-var handleResponseError = (e4, outgoing) => {
-  const err = e4 instanceof Error ? e4 : new Error("unknown error", { cause: e4 });
-  if (err.code === "ERR_STREAM_PREMATURE_CLOSE") {
-    console.info("The user aborted a request.");
-  } else {
-    console.error(e4);
-    if (!outgoing.headersSent) {
-      outgoing.writeHead(500, { "Content-Type": "text/plain" });
-    }
-    outgoing.end(`Error: ${err.message}`);
-    outgoing.destroy(err);
-  }
-};
-var flushHeaders = (outgoing) => {
-  if ("flushHeaders" in outgoing && outgoing.writable) {
-    outgoing.flushHeaders();
-  }
-};
-var responseViaCache = async (res, outgoing) => {
-  let [status, body, header] = res[cacheKey];
-  if (header instanceof Headers) {
-    header = buildOutgoingHttpHeaders(header);
-  }
-  if (typeof body === "string") {
-    header["Content-Length"] = Buffer.byteLength(body);
-  } else if (body instanceof Uint8Array) {
-    header["Content-Length"] = body.byteLength;
-  } else if (body instanceof Blob) {
-    header["Content-Length"] = body.size;
-  }
-  outgoing.writeHead(status, header);
-  if (typeof body === "string" || body instanceof Uint8Array) {
-    outgoing.end(body);
-  } else if (body instanceof Blob) {
-    outgoing.end(new Uint8Array(await body.arrayBuffer()));
-  } else {
-    flushHeaders(outgoing);
-    await writeFromReadableStream(body, outgoing)?.catch(
-      (e4) => handleResponseError(e4, outgoing)
-    );
-  }
-  ;
-  outgoing[outgoingEnded]?.();
-};
-var isPromise = (res) => typeof res.then === "function";
-var responseViaResponseObject = async (res, outgoing, options = {}) => {
-  if (isPromise(res)) {
-    if (options.errorHandler) {
-      try {
-        res = await res;
-      } catch (err) {
-        const errRes = await options.errorHandler(err);
-        if (!errRes) {
-          return;
-        }
-        res = errRes;
-      }
-    } else {
-      res = await res.catch(handleFetchError);
-    }
-  }
-  if (cacheKey in res) {
-    return responseViaCache(res, outgoing);
-  }
-  const resHeaderRecord = buildOutgoingHttpHeaders(res.headers);
-  if (res.body) {
-    const reader = res.body.getReader();
-    const values = [];
-    let done = false;
-    let currentReadPromise = void 0;
-    if (resHeaderRecord["transfer-encoding"] !== "chunked") {
-      let maxReadCount = 2;
-      for (let i4 = 0; i4 < maxReadCount; i4++) {
-        currentReadPromise ||= reader.read();
-        const chunk = await readWithoutBlocking(currentReadPromise).catch((e4) => {
-          console.error(e4);
-          done = true;
-        });
-        if (!chunk) {
-          if (i4 === 1) {
-            await new Promise((resolve) => setTimeout(resolve));
-            maxReadCount = 3;
-            continue;
-          }
-          break;
-        }
-        currentReadPromise = void 0;
-        if (chunk.value) {
-          values.push(chunk.value);
-        }
-        if (chunk.done) {
-          done = true;
-          break;
-        }
-      }
-      if (done && !("content-length" in resHeaderRecord)) {
-        resHeaderRecord["content-length"] = values.reduce((acc, value) => acc + value.length, 0);
-      }
-    }
-    outgoing.writeHead(res.status, resHeaderRecord);
-    values.forEach((value) => {
-      ;
-      outgoing.write(value);
-    });
-    if (done) {
-      outgoing.end();
-    } else {
-      if (values.length === 0) {
-        flushHeaders(outgoing);
-      }
-      await writeFromReadableStreamDefaultReader(reader, outgoing, currentReadPromise);
-    }
-  } else if (resHeaderRecord[X_ALREADY_SENT]) {
-  } else {
-    outgoing.writeHead(res.status, resHeaderRecord);
-    outgoing.end();
-  }
-  ;
-  outgoing[outgoingEnded]?.();
-};
-var getRequestListener = (fetchCallback, options = {}) => {
-  const autoCleanupIncoming = options.autoCleanupIncoming ?? true;
-  if (options.overrideGlobalObjects !== false && global.Request !== Request2) {
-    Object.defineProperty(global, "Request", {
-      value: Request2
-    });
-    Object.defineProperty(global, "Response", {
-      value: Response2
-    });
-  }
-  return async (incoming, outgoing) => {
-    let res, req;
-    try {
-      req = newRequest(incoming, options.hostname);
-      let incomingEnded = !autoCleanupIncoming || incoming.method === "GET" || incoming.method === "HEAD";
-      if (!incomingEnded) {
-        ;
-        incoming[wrapBodyStream] = true;
-        incoming.on("end", () => {
-          incomingEnded = true;
-        });
-        if (incoming instanceof import_http2.Http2ServerRequest) {
-          ;
-          outgoing[outgoingEnded] = () => {
-            if (!incomingEnded) {
-              setTimeout(() => {
-                if (!incomingEnded) {
-                  setTimeout(() => {
-                    incoming.destroy();
-                    outgoing.destroy();
-                  });
-                }
-              });
-            }
-          };
-        }
-      }
-      outgoing.on("close", () => {
-        const abortController = req[abortControllerKey];
-        if (abortController) {
-          if (incoming.errored) {
-            req[abortControllerKey].abort(incoming.errored.toString());
-          } else if (!outgoing.writableFinished) {
-            req[abortControllerKey].abort("Client connection prematurely closed.");
-          }
-        }
-        if (!incomingEnded) {
-          setTimeout(() => {
-            if (!incomingEnded) {
-              setTimeout(() => {
-                incoming.destroy();
-              });
-            }
-          });
-        }
-      });
-      res = fetchCallback(req, { incoming, outgoing });
-      if (cacheKey in res) {
-        return responseViaCache(res, outgoing);
-      }
-    } catch (e4) {
-      if (!res) {
-        if (options.errorHandler) {
-          res = await options.errorHandler(req ? e4 : toRequestError(e4));
-          if (!res) {
-            return;
-          }
-        } else if (!req) {
-          res = handleRequestError();
-        } else {
-          res = handleFetchError(e4);
-        }
-      } else {
-        return handleResponseError(e4, outgoing);
-      }
-    }
-    try {
-      return await responseViaResponseObject(res, outgoing, options);
-    } catch (e4) {
-      return handleResponseError(e4, outgoing);
-    }
-  };
-};
-var handle = (app2) => {
-  return getRequestListener(app2.fetch);
-};
 
 // apps/api/src/app.ts
 var import_config = require("dotenv/config");
@@ -32967,16 +32432,16 @@ var compose = (middleware, onError, onNotFound) => {
       index2 = i4;
       let res;
       let isError = false;
-      let handler;
+      let handler2;
       if (middleware[i4]) {
-        handler = middleware[i4][0][0];
+        handler2 = middleware[i4][0][0];
         context.req.routeIndex = i4;
       } else {
-        handler = i4 === middleware.length && next || void 0;
+        handler2 = i4 === middleware.length && next || void 0;
       }
-      if (handler) {
+      if (handler2) {
         try {
-          res = await handler(context, () => dispatch(i4 + 1));
+          res = await handler2(context, () => dispatch(i4 + 1));
         } catch (err) {
           if (err instanceof Error && onError) {
             context.error = err;
@@ -33112,15 +32577,15 @@ var getPattern = (label, next) => {
   }
   const match2 = label.match(/^\:([^\{\}]+)(?:\{(.+)\})?$/);
   if (match2) {
-    const cacheKey2 = `${label}#${next}`;
-    if (!patternCache[cacheKey2]) {
+    const cacheKey = `${label}#${next}`;
+    if (!patternCache[cacheKey]) {
       if (match2[2]) {
-        patternCache[cacheKey2] = next && next[0] !== ":" && next[0] !== "*" ? [cacheKey2, match2[1], new RegExp(`^${match2[2]}(?=/${next})`)] : [label, match2[1], new RegExp(`^${match2[2]}$`)];
+        patternCache[cacheKey] = next && next[0] !== ":" && next[0] !== "*" ? [cacheKey, match2[1], new RegExp(`^${match2[2]}(?=/${next})`)] : [label, match2[1], new RegExp(`^${match2[2]}$`)];
       } else {
-        patternCache[cacheKey2] = [label, match2[1], true];
+        patternCache[cacheKey] = [label, match2[1], true];
       }
     }
-    return patternCache[cacheKey2];
+    return patternCache[cacheKey];
   }
   return null;
 };
@@ -34043,8 +33508,8 @@ var Hono = class _Hono {
         } else {
           this.#addRoute(method, this.#path, args1);
         }
-        args.forEach((handler) => {
-          this.#addRoute(method, this.#path, handler);
+        args.forEach((handler2) => {
+          this.#addRoute(method, this.#path, handler2);
         });
         return this;
       };
@@ -34053,8 +33518,8 @@ var Hono = class _Hono {
       for (const p4 of [path].flat()) {
         this.#path = p4;
         for (const m4 of [method].flat()) {
-          handlers.map((handler) => {
-            this.#addRoute(m4.toUpperCase(), this.#path, handler);
+          handlers.map((handler2) => {
+            this.#addRoute(m4.toUpperCase(), this.#path, handler2);
           });
         }
       }
@@ -34067,8 +33532,8 @@ var Hono = class _Hono {
         this.#path = "*";
         handlers.unshift(arg1);
       }
-      handlers.forEach((handler) => {
-        this.#addRoute(METHOD_NAME_ALL, this.#path, handler);
+      handlers.forEach((handler2) => {
+        this.#addRoute(METHOD_NAME_ALL, this.#path, handler2);
       });
       return this;
     };
@@ -34110,14 +33575,14 @@ var Hono = class _Hono {
   route(path, app2) {
     const subApp = this.basePath(path);
     app2.routes.map((r4) => {
-      let handler;
+      let handler2;
       if (app2.errorHandler === errorHandler) {
-        handler = r4.handler;
+        handler2 = r4.handler;
       } else {
-        handler = async (c4, next) => (await compose([], app2.errorHandler)(c4, () => r4.handler(c4, next))).res;
-        handler[COMPOSED_HANDLER] = r4.handler;
+        handler2 = async (c4, next) => (await compose([], app2.errorHandler)(c4, () => r4.handler(c4, next))).res;
+        handler2[COMPOSED_HANDLER] = r4.handler;
       }
-      subApp.#addRoute(r4.method, r4.path, handler);
+      subApp.#addRoute(r4.method, r4.path, handler2);
     });
     return this;
   }
@@ -34155,8 +33620,8 @@ var Hono = class _Hono {
    * })
    * ```
    */
-  onError = (handler) => {
-    this.errorHandler = handler;
+  onError = (handler2) => {
+    this.errorHandler = handler2;
     return this;
   };
   /**
@@ -34174,8 +33639,8 @@ var Hono = class _Hono {
    * })
    * ```
    */
-  notFound = (handler) => {
-    this.#notFoundHandler = handler;
+  notFound = (handler2) => {
+    this.#notFoundHandler = handler2;
     return this;
   };
   /**
@@ -34245,21 +33710,21 @@ var Hono = class _Hono {
         return new Request(url, request);
       };
     })();
-    const handler = async (c4, next) => {
+    const handler2 = async (c4, next) => {
       const res = await applicationHandler(replaceRequest(c4.req.raw), ...getOptions(c4));
       if (res) {
         return res;
       }
       await next();
     };
-    this.#addRoute(METHOD_NAME_ALL, mergePath(path, "*"), handler);
+    this.#addRoute(METHOD_NAME_ALL, mergePath(path, "*"), handler2);
     return this;
   }
-  #addRoute(method, path, handler) {
+  #addRoute(method, path, handler2) {
     method = method.toUpperCase();
     path = mergePath(this._basePath, path);
-    const r4 = { basePath: this._basePath, path, method, handler };
-    this.router.add(method, path, [handler, r4]);
+    const r4 = { basePath: this._basePath, path, method, handler: handler2 };
+    this.router.add(method, path, [handler2, r4]);
     this.routes.push(r4);
   }
   #handleError(err, c4) {
@@ -34648,7 +34113,7 @@ var RegExpRouter = class {
     this.#middleware = { [METHOD_NAME_ALL]: /* @__PURE__ */ Object.create(null) };
     this.#routes = { [METHOD_NAME_ALL]: /* @__PURE__ */ Object.create(null) };
   }
-  add(method, path, handler) {
+  add(method, path, handler2) {
     const middleware = this.#middleware;
     const routes = this.#routes;
     if (!middleware || !routes) {
@@ -34679,14 +34144,14 @@ var RegExpRouter = class {
       Object.keys(middleware).forEach((m4) => {
         if (method === METHOD_NAME_ALL || method === m4) {
           Object.keys(middleware[m4]).forEach((p4) => {
-            re.test(p4) && middleware[m4][p4].push([handler, paramCount]);
+            re.test(p4) && middleware[m4][p4].push([handler2, paramCount]);
           });
         }
       });
       Object.keys(routes).forEach((m4) => {
         if (method === METHOD_NAME_ALL || method === m4) {
           Object.keys(routes[m4]).forEach(
-            (p4) => re.test(p4) && routes[m4][p4].push([handler, paramCount])
+            (p4) => re.test(p4) && routes[m4][p4].push([handler2, paramCount])
           );
         }
       });
@@ -34700,7 +34165,7 @@ var RegExpRouter = class {
           routes[m4][path2] ||= [
             ...findMiddleware(middleware[m4], path2) || findMiddleware(middleware[METHOD_NAME_ALL], path2) || []
           ];
-          routes[m4][path2].push([handler, paramCount - len + i4 + 1]);
+          routes[m4][path2].push([handler2, paramCount - len + i4 + 1]);
         }
       });
     }
@@ -34745,11 +34210,11 @@ var SmartRouter = class {
   constructor(init) {
     this.#routers = init.routers;
   }
-  add(method, path, handler) {
+  add(method, path, handler2) {
     if (!this.#routes) {
       throw new Error(MESSAGE_MATCHER_IS_ALREADY_BUILT);
     }
-    this.#routes.push([method, path, handler]);
+    this.#routes.push([method, path, handler2]);
   }
   match(method, path) {
     if (!this.#routes) {
@@ -34800,17 +34265,17 @@ var Node2 = class _Node2 {
   #patterns;
   #order = 0;
   #params = emptyParams;
-  constructor(method, handler, children) {
+  constructor(method, handler2, children) {
     this.#children = children || /* @__PURE__ */ Object.create(null);
     this.#methods = [];
-    if (method && handler) {
+    if (method && handler2) {
       const m4 = /* @__PURE__ */ Object.create(null);
-      m4[method] = { handler, possibleKeys: [], score: 0 };
+      m4[method] = { handler: handler2, possibleKeys: [], score: 0 };
       this.#methods = [m4];
     }
     this.#patterns = [];
   }
-  insert(method, path, handler) {
+  insert(method, path, handler2) {
     this.#order = ++this.#order;
     let curNode = this;
     const parts = splitRoutingPath(path);
@@ -34836,7 +34301,7 @@ var Node2 = class _Node2 {
     }
     curNode.#methods.push({
       [method]: {
-        handler,
+        handler: handler2,
         possibleKeys: possibleKeys.filter((v4, i4, a4) => a4.indexOf(v4) === i4),
         score: this.#order
       }
@@ -34946,7 +34411,7 @@ var Node2 = class _Node2 {
         return a4.score - b4.score;
       });
     }
-    return [handlerSets.map(({ handler, params }) => [handler, params])];
+    return [handlerSets.map(({ handler: handler2, params }) => [handler2, params])];
   }
 };
 
@@ -34957,15 +34422,15 @@ var TrieRouter = class {
   constructor() {
     this.#node = new Node2();
   }
-  add(method, path, handler) {
+  add(method, path, handler2) {
     const results = checkOptionalParameter(path);
     if (results) {
       for (let i4 = 0, len = results.length; i4 < len; i4++) {
-        this.#node.insert(method, results[i4], handler);
+        this.#node.insert(method, results[i4], handler2);
       }
       return;
     }
-    this.#node.insert(method, path, handler);
+    this.#node.insert(method, path, handler2);
   }
   match(method, path) {
     return this.#node.search(method, path);
@@ -44578,7 +44043,7 @@ var knownUserAgents = {
   node: "Node.js"
 };
 var getRuntimeKey = () => {
-  const global2 = globalThis;
+  const global = globalThis;
   const userAgentSupported = typeof navigator !== "undefined" && typeof navigator.userAgent === "string";
   if (userAgentSupported) {
     for (const [runtimeKey, userAgent] of Object.entries(knownUserAgents)) {
@@ -44587,13 +44052,13 @@ var getRuntimeKey = () => {
       }
     }
   }
-  if (typeof global2?.EdgeRuntime === "string") {
+  if (typeof global?.EdgeRuntime === "string") {
     return "edge-light";
   }
-  if (global2?.fastly !== void 0) {
+  if (global?.fastly !== void 0) {
     return "fastly";
   }
-  if (global2?.process?.release?.name === "node") {
+  if (global?.process?.release?.name === "node") {
     return "node";
   }
   return "other";
@@ -46001,4 +45466,33 @@ app.onError((err, c4) => {
 var app_default = app;
 
 // apps/api/src/vercel.ts
-var vercel_default = handle(app_default);
+async function handler(req, res) {
+  const body = await new Promise((resolve) => {
+    if (req.method === "GET" || req.method === "HEAD" || req.method === "OPTIONS") {
+      return resolve(Buffer.alloc(0));
+    }
+    const chunks = [];
+    req.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
+    req.on("end", () => resolve(Buffer.concat(chunks)));
+  });
+  const url = `https://${req.headers.host || "localhost"}${req.url || "/"}`;
+  const headers = new Headers();
+  for (const [key, value] of Object.entries(req.headers)) {
+    if (value) headers.set(key, Array.isArray(value) ? value.join(", ") : value);
+  }
+  const requestInit = {
+    method: req.method || "GET",
+    headers
+  };
+  if (body.length > 0) {
+    requestInit.body = body;
+  }
+  const request = new Request(url, requestInit);
+  const response = await app_default.fetch(request);
+  res.statusCode = response.status;
+  response.headers.forEach((value, key) => {
+    res.setHeader(key, value);
+  });
+  const responseBody = await response.arrayBuffer();
+  res.end(Buffer.from(responseBody));
+}
