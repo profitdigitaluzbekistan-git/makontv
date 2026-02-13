@@ -137,6 +137,9 @@
 
     if (heroTitle) heroTitle.textContent = item.title || '';
     if (heroDesc) heroDesc.textContent = item.shortDesc || item.description || '';
+    // Show badge
+    const heroBadge = document.querySelector('.h-badge');
+    if (heroBadge) heroBadge.style.display = '';
     if (heroMeta) {
       heroMeta.innerHTML = [
         item.rating ? `<span class="h-rating">${item.rating}</span>` : '',
