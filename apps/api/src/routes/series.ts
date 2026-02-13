@@ -25,7 +25,10 @@ seriesRoute.get('/', async (c) => {
   const lang = getLang(c);
   const pagination = getPagination(c);
 
-  const conditions = [eq(series.isPublished, true)];
+  // Only published
+  const conditions: any[] = [
+    eq(series.isPublished, true),
+  ];
 
   const genreSlug = c.req.query('genre');
   let genreSeriesIds: string[] | null = null;
@@ -60,8 +63,10 @@ seriesRoute.get('/', async (c) => {
     allResults = await db.select().from(series).where(and(...conditions)).orderBy(orderBy);
   }
 
-  const total = allResults.length;
-  const paged = allResults.slice(pagination.offset, pagination.offset + pagination.limit);
+  // Filter: only with poster for public display
+  const filtered = allResults.filter((s: any) => s.posterUrl);
+  const total = filtered.length;
+  const paged = filtered.slice(pagination.offset, pagination.offset + pagination.limit);
 
   const result = [];
   for (const s of paged) {

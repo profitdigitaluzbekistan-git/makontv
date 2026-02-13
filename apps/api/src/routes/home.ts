@@ -5,7 +5,7 @@
  * Query: ?lang=ru|uz
  */
 import { Hono } from 'hono';
-import { eq, desc, and, sql } from 'drizzle-orm';
+import { eq, desc, and } from 'drizzle-orm';
 import {
   movies, series, collections, collectionItems,
   movieGenres, seriesGenres, genres,
@@ -27,13 +27,16 @@ home.get('/', async (c) => {
   const db = getDb();
   const lang = getLang(c);
 
-  // 1. Hero — featured movies/series
-  const featuredMovies = await db.select().from(movies)
+  // 1. Hero — featured movies/series (only published with backdrop + poster)
+  const allFeaturedMovies = await db.select().from(movies)
     .where(and(eq(movies.isPublished, true), eq(movies.featured, true)))
-    .limit(3);
-  const featuredSeries = await db.select().from(series)
+    .limit(10);
+  const featuredMovies = allFeaturedMovies.filter(m => m.backdropUrl && m.posterUrl).slice(0, 3);
+
+  const allFeaturedSeries = await db.select().from(series)
     .where(and(eq(series.isPublished, true), eq(series.featured, true)))
-    .limit(3);
+    .limit(10);
+  const featuredSeries = allFeaturedSeries.filter(s => s.backdropUrl && s.posterUrl).slice(0, 3);
 
   const hero = [
     ...featuredMovies.map(m => ({ type: 'movie' as const, ...locMovie(m, lang) })),
@@ -58,11 +61,11 @@ home.get('/', async (c) => {
     for (const item of items) {
       if (item.movieId) {
         const [m] = await db.select().from(movies).where(eq(movies.id, item.movieId));
-        if (m && m.isPublished) content.push({ type: 'movie', ...locMovie(m, lang) });
+        if (m && m.isPublished && m.posterUrl) content.push({ type: 'movie', ...locMovie(m, lang) });
       }
       if (item.seriesId) {
         const [s] = await db.select().from(series).where(eq(series.id, item.seriesId));
-        if (s && s.isPublished) content.push({ type: 'series', ...locSeries(s, lang) });
+        if (s && s.isPublished && s.posterUrl) content.push({ type: 'series', ...locSeries(s, lang) });
       }
     }
 

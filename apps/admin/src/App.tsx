@@ -6,9 +6,8 @@ import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
 import { ConfigProvider, theme, App as AntApp } from 'antd';
 import {
   PlayCircleOutlined, VideoCameraOutlined, TagOutlined,
-  TeamOutlined, AppstoreOutlined, UserOutlined,
-  BellOutlined, CrownOutlined, DashboardOutlined,
-  OrderedListOutlined, UnorderedListOutlined,
+  TeamOutlined, UserOutlined, BellOutlined, DashboardOutlined,
+  SettingOutlined,
 } from '@ant-design/icons';
 
 import '@refinedev/antd/dist/reset.css';
@@ -17,17 +16,18 @@ import { dataProvider } from './providers/dataProvider';
 import { LoginGate } from './components/LoginGate';
 import { DashboardPage } from './pages/dashboard';
 import { AnalyticsPage } from './pages/dashboard/analytics';
+import { ContentPage } from './pages/content';
 import { MovieList } from './pages/movies/list';
 import { MovieCreate, MovieEdit } from './pages/movies/form';
 import { GenreList, GenreCreate, GenreEdit } from './pages/genres';
 import { SeriesList, SeriesCreate, SeriesEdit } from './pages/series';
 import { PersonList, PersonCreate, PersonEdit } from './pages/persons';
-import { SeasonList, SeasonCreate, SeasonEdit, EpisodeList, EpisodeCreate, EpisodeEdit } from './pages/episodes';
 import { CollectionList, CollectionCreate, CollectionEdit } from './pages/collections';
 import { UserList, UserEdit } from './pages/users';
 import { NotificationList, NotificationCreate } from './pages/notifications';
 import { BroadcastPage } from './pages/notifications/broadcast';
 import { PlanList, PlanCreate, PlanEdit } from './pages/plans';
+import { SettingsPage } from './pages/settings';
 
 const AppContent: React.FC = () => {
   return (
@@ -53,37 +53,23 @@ const AppContent: React.FC = () => {
                 meta: { label: 'Дашборд', icon: <DashboardOutlined /> },
               },
               {
-                name: 'analytics',
-                list: '/analytics',
-                meta: { label: 'Аналитика', icon: <DashboardOutlined /> },
+                name: 'content',
+                list: '/content',
+                meta: { label: 'Контент', icon: <VideoCameraOutlined /> },
               },
               {
                 name: 'movies',
                 list: '/movies',
                 create: '/movies/create',
                 edit: '/movies/edit/:id',
-                meta: { label: 'Фильмы', icon: <PlayCircleOutlined /> },
+                meta: { parent: 'content', hide: true },
               },
               {
                 name: 'series',
                 list: '/series',
                 create: '/series/create',
                 edit: '/series/edit/:id',
-                meta: { label: 'Сериалы', icon: <VideoCameraOutlined /> },
-              },
-              {
-                name: 'seasons',
-                list: '/seasons',
-                create: '/seasons/create',
-                edit: '/seasons/edit/:id',
-                meta: { label: 'Сезоны', icon: <OrderedListOutlined /> },
-              },
-              {
-                name: 'episodes',
-                list: '/episodes',
-                create: '/episodes/create',
-                edit: '/episodes/edit/:id',
-                meta: { label: 'Эпизоды', icon: <UnorderedListOutlined /> },
+                meta: { parent: 'content', hide: true },
               },
               {
                 name: 'genres',
@@ -97,21 +83,7 @@ const AppContent: React.FC = () => {
                 list: '/persons',
                 create: '/persons/create',
                 edit: '/persons/edit/:id',
-                meta: { label: 'Персоны', icon: <TeamOutlined /> },
-              },
-              {
-                name: 'collections',
-                list: '/collections',
-                create: '/collections/create',
-                edit: '/collections/edit/:id',
-                meta: { label: 'Подборки', icon: <AppstoreOutlined /> },
-              },
-              {
-                name: 'plans',
-                list: '/plans',
-                create: '/plans/create',
-                edit: '/plans/edit/:id',
-                meta: { label: 'Тарифы', icon: <CrownOutlined /> },
+                meta: { label: 'Актёры и съёмочная группа', icon: <TeamOutlined /> },
               },
               {
                 name: 'users',
@@ -124,6 +96,11 @@ const AppContent: React.FC = () => {
                 list: '/notifications',
                 create: '/notifications/create',
                 meta: { label: 'Уведомления', icon: <BellOutlined /> },
+              },
+              {
+                name: 'settings',
+                list: '/settings',
+                meta: { label: 'Настройки', icon: <SettingOutlined /> },
               },
             ]}
           >
@@ -139,6 +116,8 @@ const AppContent: React.FC = () => {
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/analytics" element={<AnalyticsPage />} />
 
+                <Route path="/content" element={<ContentPage />} />
+
                 <Route path="/movies" element={<MovieList />} />
                 <Route path="/movies/create" element={<MovieCreate />} />
                 <Route path="/movies/edit/:id" element={<MovieEdit />} />
@@ -146,14 +125,6 @@ const AppContent: React.FC = () => {
                 <Route path="/series" element={<SeriesList />} />
                 <Route path="/series/create" element={<SeriesCreate />} />
                 <Route path="/series/edit/:id" element={<SeriesEdit />} />
-
-                <Route path="/seasons" element={<SeasonList />} />
-                <Route path="/seasons/create" element={<SeasonCreate />} />
-                <Route path="/seasons/edit/:id" element={<SeasonEdit />} />
-
-                <Route path="/episodes" element={<EpisodeList />} />
-                <Route path="/episodes/create" element={<EpisodeCreate />} />
-                <Route path="/episodes/edit/:id" element={<EpisodeEdit />} />
 
                 <Route path="/genres" element={<GenreList />} />
                 <Route path="/genres/create" element={<GenreCreate />} />
@@ -163,20 +134,22 @@ const AppContent: React.FC = () => {
                 <Route path="/persons/create" element={<PersonCreate />} />
                 <Route path="/persons/edit/:id" element={<PersonEdit />} />
 
-                <Route path="/collections" element={<CollectionList />} />
-                <Route path="/collections/create" element={<CollectionCreate />} />
-                <Route path="/collections/edit/:id" element={<CollectionEdit />} />
-
-                <Route path="/plans" element={<PlanList />} />
-                <Route path="/plans/create" element={<PlanCreate />} />
-                <Route path="/plans/edit/:id" element={<PlanEdit />} />
-
                 <Route path="/users" element={<UserList />} />
                 <Route path="/users/edit/:id" element={<UserEdit />} />
 
                 <Route path="/notifications" element={<NotificationList />} />
                 <Route path="/notifications/create" element={<NotificationCreate />} />
                 <Route path="/notifications/broadcast" element={<BroadcastPage />} />
+
+                <Route path="/settings" element={<SettingsPage />} />
+
+                {/* Keep plan/collection routes for create/edit navigations */}
+                <Route path="/plans" element={<PlanList />} />
+                <Route path="/plans/create" element={<PlanCreate />} />
+                <Route path="/plans/edit/:id" element={<PlanEdit />} />
+                <Route path="/collections" element={<CollectionList />} />
+                <Route path="/collections/create" element={<CollectionCreate />} />
+                <Route path="/collections/edit/:id" element={<CollectionEdit />} />
               </Route>
             </Routes>
             <UnsavedChangesNotifier />

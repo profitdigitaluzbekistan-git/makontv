@@ -31,8 +31,10 @@ moviesRoute.get('/', async (c) => {
   const lang = getLang(c);
   const pagination = getPagination(c);
 
-  // Build conditions
-  const conditions = [eq(movies.isPublished, true)];
+  // Build conditions — only published
+  const conditions: any[] = [
+    eq(movies.isPublished, true),
+  ];
 
   // Genre filter
   const genreSlug = c.req.query('genre');
@@ -75,8 +77,8 @@ moviesRoute.get('/', async (c) => {
       .orderBy(orderBy);
   }
 
-  // Count total
-  const allResults = await query;
+  // Filter: only with poster for public display
+  const allResults = (await query).filter((m: any) => m.posterUrl);
   const total = allResults.length;
   const paged = allResults.slice(pagination.offset, pagination.offset + pagination.limit);
 
