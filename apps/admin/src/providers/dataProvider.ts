@@ -5,7 +5,7 @@
 import simpleRestDataProvider from '@refinedev/simple-rest';
 import type { DataProvider } from '@refinedev/core';
 
-const API_URL = '/admin';
+const API_URL = (import.meta.env.VITE_API_URL || '') + '/admin';
 const ADMIN_SECRET = localStorage.getItem('makontv_admin_secret') || '';
 
 // Custom fetch that adds auth header
