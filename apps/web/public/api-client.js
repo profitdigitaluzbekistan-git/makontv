@@ -232,14 +232,11 @@
   };
 
   function renderGenreChips(genresList) {
-    // Find genre filter container if it exists
-    const containers = document.querySelectorAll('.cat-chips');
+    const containers = document.querySelectorAll('.cat-filters');
     containers.forEach(container => {
-      const existing = container.innerHTML;
-      // Preserve "Все" chip, add API genres
-      let html = '<span class="chip active" onclick="MakonAPI.filterGenre(null,this)">Все</span>';
+      let html = '<div class="chip active" onclick="MakonAPI.filterGenre(null,this)">Все</div>';
       genresList.forEach(g => {
-        html += `<span class="chip" onclick="MakonAPI.filterGenre('${g.slug}',this)">${g.name}</span>`;
+        html += `<div class="chip" onclick="MakonAPI.filterGenre('${g.slug}',this)">${g.name}</div>`;
       });
       container.innerHTML = html;
     });
@@ -698,7 +695,7 @@
   MakonAPI.filterGenre = function(genreSlug, chipEl) {
     // Update active chip
     if (chipEl) {
-      chipEl.closest('.cat-chips').querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      chipEl.closest('.cat-filters').querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
       chipEl.classList.add('active');
     }
 
