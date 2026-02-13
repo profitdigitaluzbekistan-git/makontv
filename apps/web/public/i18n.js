@@ -73,19 +73,7 @@
     // ═══ NOTIFICATIONS ═══
     'Уведомления': 'Bildirishnomalar',
     'Прочитать все': 'Hammasini o\'qish',
-    'Новая серия!': 'Yangi qism!',
-    'Код: Ташкент — Серия 6': 'Kod: Toshkent — 6-qism',
-    '15 минут назад': '15 daqiqa oldin',
-    'Скидка 30%': '30% chegirma',
-    'на годовую подписку': 'yillik obunaga',
-    '2 часа назад': '2 soat oldin',
-    'Новый фильм:': 'Yangi film:',
-    'Вчера': 'Kecha',
-    'Пригласите друга —': 'Do\'stingizni taklif qiling —',
-    '7 дней Premium': '7 kun Premium',
-    '2 дня назад': '2 kun oldin',
-    'Обновление до версии 2.4': '2.4 versiyasiga yangilash',
-    '3 дня назад': '3 kun oldin',
+    'Нет уведомлений': 'Bildirishnomalar yo\'q',
 
     // ═══ AUTH MODAL ═══
     'Вход': 'Kirish',

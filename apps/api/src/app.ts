@@ -9,7 +9,8 @@ import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { authRateLimit, apiRateLimit, searchRateLimit } from './middleware/rateLimit';
 import { getDb } from './db';
-import { genres } from '@makontv/db';
+import { genres, notifications } from '@makontv/db';
+import { desc, isNull } from 'drizzle-orm';
 
 // Routes
 import homeRoute from './routes/home';
@@ -79,6 +80,16 @@ app.get('/api', (c) => c.json({
   },
   i18n: 'Добавьте ?lang=uz к любому GET-запросу для узбекского языка. По умолчанию: ru.',
 }));
+
+// ═══ PUBLIC NOTIFICATIONS (global, userId is null) ═══
+app.get('/api/notifications', async (c) => {
+  const db = getDb();
+  const notifs = await db.select().from(notifications)
+    .where(isNull(notifications.userId))
+    .orderBy(desc(notifications.createdAt))
+    .limit(20);
+  return c.json(notifs);
+});
 
 // ═══ ROUTES ═══
 app.use('/api/auth/*', authRateLimit);

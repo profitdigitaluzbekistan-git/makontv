@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Create, Edit, useForm } from '@refinedev/antd';
 import {
   Form, Input, InputNumber, Select, Switch, Row, Col,
@@ -11,8 +11,13 @@ import {
   InfoCircleOutlined,
 } from '@ant-design/icons';
 import { JsonbLangInput } from '../../components/JsonbLangInput';
+import { getAdminSecret } from '../../providers/dataProvider';
 
 const { Title, Text, Paragraph } = Typography;
+
+const API_BASE = (import.meta.env.VITE_API_URL || '') + '/admin';
+const fetchAuth = (url: string, init?: RequestInit) =>
+  fetch(url, { ...init, headers: { 'X-Admin-Secret': getAdminSecret(), 'Content-Type': 'application/json' } });
 
 const STEPS = [
   { title: 'Видео', icon: <VideoCameraOutlined /> },
@@ -24,9 +29,36 @@ const STEPS = [
 ];
 
 const MovieWizard: React.FC<{ isEdit?: boolean }> = ({ isEdit }) => {
-  const { formProps, saveButtonProps, form, formLoading } = useForm({
+  const [genreOptions, setGenreOptions] = useState<{ value: string; label: string }[]>([]);
+  const [selectedGenreIds, setSelectedGenreIds] = useState<string[]>([]);
+  const selectedRef = useRef<string[]>([]);
+  const genresReadyRef = useRef(!isEdit);
+  selectedRef.current = selectedGenreIds;
+
+  const { formProps, saveButtonProps, form, formLoading, queryResult } = useForm({
     resource: 'movies',
     redirect: 'list',
+    onMutationSuccess: async (data: any) => {
+      const movieId = data?.data?.id;
+      if (!movieId || !genresReadyRef.current) return;
+      const ids = selectedRef.current;
+      try {
+        if (isEdit) {
+          const res = await fetchAuth(`${API_BASE}/movie-genres/${movieId}`);
+          const existing: any[] = await res.json();
+          const existingIds = existing.map((l: any) => l.genreId);
+          await Promise.all([
+            ...existingIds.filter(id => !ids.includes(id)).map(gid =>
+              fetchAuth(`${API_BASE}/movie-genres/${movieId}/${gid}`, { method: 'DELETE' })),
+            ...ids.filter(id => !existingIds.includes(id)).map(gid =>
+              fetchAuth(`${API_BASE}/movie-genres`, { method: 'POST', body: JSON.stringify({ movieId, genreId: gid }) })),
+          ]);
+        } else if (ids.length > 0) {
+          await Promise.all(ids.map(gid =>
+            fetchAuth(`${API_BASE}/movie-genres`, { method: 'POST', body: JSON.stringify({ movieId, genreId: gid }) })));
+        }
+      } catch (e) { console.error('Genre sync error:', e); }
+    },
   });
   const [currentStep, setCurrentStep] = useState(0);
   const [posterPreview, setPosterPreview] = useState('');
@@ -40,6 +72,30 @@ const MovieWizard: React.FC<{ isEdit?: boolean }> = ({ isEdit }) => {
     if (formValues?.backdropUrl) setBackdropPreview(formValues.backdropUrl);
     else setBackdropPreview('');
   }, [formValues?.posterUrl, formValues?.backdropUrl]);
+
+  // Fetch genre options
+  useEffect(() => {
+    fetchAuth(`${API_BASE}/genres?_limit=200`)
+      .then(r => r.json())
+      .then((data: any[]) => setGenreOptions(
+        data.map(g => ({ value: g.id, label: g.name?.ru || g.name?.uz || g.slug || '—' }))
+      ))
+      .catch(() => {});
+  }, []);
+
+  // Load existing genres in edit mode
+  const editId = (queryResult as any)?.data?.data?.id;
+  useEffect(() => {
+    if (isEdit && editId) {
+      fetchAuth(`${API_BASE}/movie-genres/${editId}`)
+        .then(r => r.json())
+        .then((links: any[]) => {
+          setSelectedGenreIds(links.map(l => l.genreId));
+          genresReadyRef.current = true;
+        })
+        .catch(() => { genresReadyRef.current = true; });
+    }
+  }, [isEdit, editId]);
 
   const next = () => setCurrentStep(Math.min(currentStep + 1, STEPS.length - 1));
   const prev = () => setCurrentStep(Math.max(currentStep - 1, 0));
@@ -152,7 +208,23 @@ const MovieWizard: React.FC<{ isEdit?: boolean }> = ({ isEdit }) => {
           <Card>
             <Title level={4}>Жанры</Title>
             <Paragraph type="secondary">Выберите жанры для фильма. Можно выбрать несколько.</Paragraph>
-            <Alert message="Жанры привязываются отдельно" description="Жанры можно привязать к фильму после его создания через раздел Жанры. Автоматическая привязка будет добавлена позже." type="info" showIcon />
+            <Select
+              mode="multiple"
+              placeholder="Выберите жанры..."
+              value={selectedGenreIds}
+              onChange={setSelectedGenreIds}
+              options={genreOptions}
+              style={{ width: '100%' }}
+              size="large"
+              optionFilterProp="label"
+              showSearch
+              notFoundContent="Нет жанров. Создайте их в разделе «Жанры»."
+            />
+            {selectedGenreIds.length > 0 && (
+              <div style={{ marginTop: 12 }}>
+                <Text type="secondary">Выбрано жанров: {selectedGenreIds.length}</Text>
+              </div>
+            )}
           </Card>
         </div>
 

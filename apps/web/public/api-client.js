@@ -602,29 +602,59 @@
   // 8. NOTIFICATIONS
   // ═══════════════════════════
   MakonAPI.loadNotifications = function() {
-    if (!CURRENT_USER_ID) return;
+    // Fetch global notifications (visible to everyone)
+    var endpoint = '/api/notifications';
+    // If user is logged in, fetch their personal notifications instead
+    if (CURRENT_USER_ID) endpoint = '/api/users/' + CURRENT_USER_ID + '/notifications';
 
-    api(`/api/users/${CURRENT_USER_ID}/notifications`).then(notifs => {
-      const list = document.querySelector('.notif-list');
+    api(endpoint).then(function(notifs) {
+      var list = document.getElementById('notifList');
       if (!list) return;
 
-      // Update badge count
-      const unread = notifs.filter(n => !n.isRead).length;
-      const badge = document.querySelector('.notif-badge');
+      var unread = notifs.filter(function(n) { return !n.isRead; }).length;
+      var badge = document.getElementById('notifBadge');
       if (badge) {
-        badge.textContent = unread;
         badge.style.display = unread > 0 ? '' : 'none';
       }
 
-      list.innerHTML = notifs.map(n => {
-        const iconMap = { play: IC.play || '▶', gift: '🎁', system: '⚙' };
-        return `<div class="notif-item ${n.isRead ? '' : 'unread'}" onclick="MakonAPI.readNotif('${n.id}','${n.actionUrl || ''}')">
-          <div class="notif-icon">${iconMap[n.iconType] || '📢'}</div>
-          <div class="notif-body"><div class="notif-t">${n.title}</div><div class="notif-desc">${n.body || ''}</div></div>
-        </div>`;
-      }).join('') || '<div class="notif-empty">Нет уведомлений</div>';
-    }).catch(() => {});
+      var svgPlay = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="m10 8 6 4-6 4z"/></svg>';
+      var svgGift = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12v10H4V12"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>';
+      var svgGear = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
+
+      var iconTypes = { new_episode: svgPlay, promo: svgGift, system: svgGear, new_movie: svgPlay, update: svgGear };
+      var colorTypes = { new_episode: 'c1', promo: 'c2', system: 'c3', new_movie: 'c1', update: 'c3' };
+
+      if (!notifs.length) {
+        list.innerHTML = '<div class="ni"><div class="ni-ic c3">' + svgPlay + '</div><div class="ni-bd"><div class="ni-tx">Нет уведомлений</div></div></div>';
+        return;
+      }
+
+      list.innerHTML = notifs.map(function(n) {
+        var icon = iconTypes[n.type] || svgPlay;
+        var color = colorTypes[n.type] || 'c1';
+        var unreadClass = n.isRead ? '' : ' ur';
+        var dot = n.isRead ? '' : '<div class="ni-dt"></div>';
+        var title = (typeof n.title === 'object') ? (n.title.ru || n.title.uz || '') : (n.title || '');
+        var body = (typeof n.body === 'object') ? (n.body.ru || n.body.uz || '') : (n.body || '');
+        var text = title + (body ? ' ' + body : '');
+        var time = n.createdAt ? formatTimeAgo(n.createdAt) : '';
+        var onclick = n.actionUrl ? 'onclick="MakonAPI.readNotif(\'' + n.id + '\',\'' + (n.actionUrl || '') + '\')"' : '';
+        return '<div class="ni' + unreadClass + '" ' + onclick + '><div class="ni-ic ' + color + '">' + icon + '</div><div class="ni-bd"><div class="ni-tx">' + text + '</div>' + (time ? '<div class="ni-tm">' + time + '</div>' : '') + '</div>' + dot + '</div>';
+      }).join('');
+    }).catch(function() {});
   };
+
+  function formatTimeAgo(dateStr) {
+    var now = Date.now();
+    var then = new Date(dateStr).getTime();
+    var diff = Math.floor((now - then) / 1000);
+    if (diff < 60) return 'только что';
+    if (diff < 3600) return Math.floor(diff / 60) + ' мин. назад';
+    if (diff < 86400) return Math.floor(diff / 3600) + ' ч. назад';
+    var days = Math.floor(diff / 86400);
+    if (days === 1) return 'вчера';
+    return days + ' дн. назад';
+  }
 
   MakonAPI.readNotif = function(id, actionUrl) {
     if (CURRENT_USER_ID) {
@@ -732,13 +762,13 @@
     try { window.buildCatalogs(); } catch(e) { console.warn('buildCatalogs re-render failed:', e); }
   }
 
-  // Load notifications on page load if user exists
-  if (CURRENT_USER_ID) {
-    setTimeout(() => {
-      MakonAPI.loadNotifications();
+  // Load notifications for all users (global notifications for guests, personal for logged-in)
+  setTimeout(() => {
+    MakonAPI.loadNotifications();
+    if (CURRENT_USER_ID) {
       MakonAPI.loadFavorites();
-    }, 500);
-  }
+    }
+  }, 500);
 
   console.log('✅ MakonTV API Client loaded. API:', API_BASE || '(same origin)');
 
