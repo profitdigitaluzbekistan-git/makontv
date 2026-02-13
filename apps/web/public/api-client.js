@@ -623,6 +623,30 @@
   // Expose globally
   window.MakonAPI = MakonAPI;
 
+  // ═══════════════════════════
+  // OVERRIDE go() to integrate API detail loading
+  // ═══════════════════════════
+  const _origGo = window.go;
+  window.go = function(page) {
+    _origGo(page);
+
+    // After go() shows the page, load real data for detail pages
+    if (page === 'series-detail' && window._currentSlug) {
+      loadSeriesDetail(window._currentSlug);
+    }
+  };
+
+  // ═══════════════════════════
+  // RE-RENDER WITH API DATA
+  // ═══════════════════════════
+  // The original buildHome/buildCatalogs were called BEFORE this script loaded,
+  // so they rendered mock data. Now that we've overridden them, re-call to fetch real data.
+  if (API_BASE) {
+    console.log('🔄 Re-rendering with API data from:', API_BASE);
+    try { window.buildHome(); } catch(e) { console.warn('buildHome re-render failed:', e); }
+    try { window.buildCatalogs(); } catch(e) { console.warn('buildCatalogs re-render failed:', e); }
+  }
+
   // Load notifications on page load if user exists
   if (CURRENT_USER_ID) {
     setTimeout(() => {

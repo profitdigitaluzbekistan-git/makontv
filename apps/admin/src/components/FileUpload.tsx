@@ -17,6 +17,7 @@ import { UploadOutlined, LinkOutlined, CloudUploadOutlined } from '@ant-design/i
 import { getAdminSecret } from '../providers/dataProvider';
 
 const { Text } = Typography;
+const API_BASE = import.meta.env.VITE_API_URL || '';
 
 interface FileUploadProps {
   value?: string;
@@ -50,7 +51,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       formData.append('file', file);
       formData.append('folder', folder);
 
-      const res = await fetch('/admin/upload', {
+      const res = await fetch(`${API_BASE}/admin/upload`, {
         method: 'POST',
         headers: { 'X-Admin-Secret': getAdminSecret() },
         body: formData,
@@ -81,7 +82,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 
     try {
       // 1. Get presigned URL
-      const presignRes = await fetch('/admin/upload/presign', {
+      const presignRes = await fetch(`${API_BASE}/admin/upload/presign`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
