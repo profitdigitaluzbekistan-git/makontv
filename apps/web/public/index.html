@@ -675,15 +675,14 @@ a{color:inherit;text-decoration:none}
       <div class="h-meta"></div>
       <p class="h-desc"></p>
       <div class="h-act">
-        <button class="btn btn-p" onclick="go('detail')"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Смотреть</button>
+        <button class="btn btn-p" onclick="heroGoDetail()"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Смотреть</button>
         <button class="btn btn-s" onclick="handleSaveGlobal()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>В избранное</button>
-        <button class="btn btn-g" onclick="go('detail')">Подробнее</button>
+        <button class="btn btn-g" onclick="heroGoDetail()">Подробнее</button>
       </div>
     </div></div>
     <div class="hero-dots"><button class="h-dot-b active"></button><button class="h-dot-b"></button><button class="h-dot-b"></button><button class="h-dot-b"></button></div>
   </section>
   <div class="main" id="home-main"></div>
-  <div class="promo" id="promo"><div style="position:relative;z-index:1"><div class="promo-t">Смотри без рекламы и в 4K</div><div class="promo-d">Подключи подписку MakonTV Premium — контент без ограничений</div></div><button class="promo-btn" onclick="go('plans')">Выбрать тариф</button><button class="promo-x" onclick="this.parentElement.style.display='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
 </div>
 
 <!-- ═══════════ PAGE: DETAIL ═══════════ -->
@@ -698,11 +697,10 @@ a{color:inherit;text-decoration:none}
       <p class="d-desc clamp" id="dDesc"></p>
       <button class="d-more" id="dMore" onclick="toggleDesc()">Показать больше <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></button>
       <div class="d-act">
-        <button class="btn btn-p lg" id="ctaW" onclick="handleWatch()"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg><span class="btn-sub" id="ctaTxt"><span>Смотреть</span><span id="ctaS">по подписке</span></span></button>
+        <button class="btn btn-p lg" id="ctaW" onclick="handleWatch()"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Смотреть</button>
         <button class="btn-ic" id="ctaSv" onclick="handleSave()" title="В избранное"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></button>
         <button class="btn-ic" title="Поделиться"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></button>
       </div>
-      <div class="d-sub" id="dSub">Первые 30 дней подписки бесплатно · <a href="#" onclick="go('plans');return false">Подробнее</a></div>
     </div></div>
   </section>
   <div class="sec" style="margin-top:var(--sp48)">
@@ -1593,15 +1591,6 @@ function go(page){
   if(page==='library')renderLib();
   if(page==='plans')updatePlans();
   if(page==='series-detail'){buildSeasonSelector();buildEpisodes(0);}
-  // Clear detail page hardcoded content — API will fill with real data
-  if(page==='detail'){
-    const dt=document.querySelector('#page-detail .d-title');if(dt)dt.textContent='Загрузка...';
-    const dm=document.querySelector('#page-detail .d-meta');if(dm)dm.innerHTML='';
-    const dd=document.querySelector('#page-detail .d-desc');if(dd)dd.textContent='';
-    const dc=document.querySelector('#page-detail .d-chips');if(dc)dc.innerHTML='';
-    const ab=document.querySelector('#page-detail .about-desc');if(ab)ab.textContent='';
-    const ad=document.querySelector('#page-detail .about-dets');if(ad)ad.innerHTML='';
-  }
   location.hash=page;
 }
 
@@ -1650,7 +1639,13 @@ function updatePlans(){
 }
 
 /* ═══ ACTIONS ═══ */
-function handleWatch(){if(!isSub)openModal();else{const m=window._currentMovie;playEpisode(m&&m.title||'','');}}
+function heroGoDetail(){
+  const slug=window._currentHeroSlug;
+  const type=window._currentHeroType||'movie';
+  if(slug&&window.MakonAPI){MakonAPI.goDetail(type==='series'?'series-detail':'detail',slug);}
+  else{go('catalog-films');}
+}
+function handleWatch(){const m=window._currentMovie;if(m)playEpisode(m.title||'','');else go('catalog-films');}
 function handleSave(){
   if(!isAuth){openModal();return;}
   const b=document.getElementById('ctaSv');
