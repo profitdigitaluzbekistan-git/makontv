@@ -42,7 +42,7 @@ export const MovieList: React.FC = () => {
   };
 
   return (
-    <List>
+    <List resource="movies">
       <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Tabs
           activeKey={activeTab}
@@ -99,8 +99,8 @@ export const MovieList: React.FC = () => {
           width={120}
           render={(_, record: any) => (
             <Space>
-              <EditButton hideText size="small" recordItemId={record.id} />
-              <DeleteButton hideText size="small" recordItemId={record.id} />
+              <EditButton hideText size="small" recordItemId={record.id} resource="movies" />
+              <DeleteButton hideText size="small" recordItemId={record.id} resource="movies" />
             </Space>
           )}
         />

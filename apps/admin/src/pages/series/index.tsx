@@ -38,7 +38,7 @@ export const SeriesList: React.FC = () => {
   };
 
   return (
-    <List>
+    <List resource="series">
       <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Tabs
           activeKey={activeTab}
@@ -69,8 +69,8 @@ export const SeriesList: React.FC = () => {
         />
         <Table.Column title="" width={120} render={(_, r: any) => (
           <Space>
-            <EditButton hideText size="small" recordItemId={r.id} />
-            <DeleteButton hideText size="small" recordItemId={r.id} />
+            <EditButton hideText size="small" recordItemId={r.id} resource="series" />
+            <DeleteButton hideText size="small" recordItemId={r.id} resource="series" />
           </Space>
         )} />
       </Table>

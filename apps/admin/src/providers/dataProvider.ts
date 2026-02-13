@@ -6,14 +6,27 @@ import simpleRestDataProvider from '@refinedev/simple-rest';
 import type { DataProvider } from '@refinedev/core';
 
 const API_URL = (import.meta.env.VITE_API_URL || '') + '/admin';
-const ADMIN_SECRET = localStorage.getItem('makontv_admin_secret') || '';
 
-// Custom fetch that adds auth header
-const customFetch: typeof fetch = (url, options = {}) => {
+function getSecret() {
+  return localStorage.getItem('makontv_admin_secret') || '';
+}
+
+// Custom fetch that adds auth header and checks response
+const customFetch: typeof fetch = async (url, options = {}) => {
   const headers = new Headers(options.headers || {});
-  headers.set('X-Admin-Secret', ADMIN_SECRET);
+  headers.set('X-Admin-Secret', getSecret());
   headers.set('Content-Type', 'application/json');
-  return fetch(url, { ...options, headers });
+  const response = await fetch(url, { ...options, headers });
+  if (!response.ok) {
+    if (response.status === 401) {
+      localStorage.removeItem('makontv_admin_secret');
+      window.location.reload();
+      throw new Error('Unauthorized');
+    }
+    const body = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(body.error || `HTTP ${response.status}`);
+  }
+  return response;
 };
 
 export const dataProvider: DataProvider = {
@@ -45,13 +58,27 @@ export const dataProvider: DataProvider = {
     const data = await response.json();
     const total = parseInt(response.headers.get('x-total-count') || '0');
 
-    return { data, total };
+    return { data: Array.isArray(data) ? data : [], total: total || (Array.isArray(data) ? data.length : 0) };
   },
 
   // Override getOne
   getOne: async ({ resource, id }) => {
     const url = `${API_URL}/${resource}/${id}`;
-    const response = await customFetch(url);
+    const headers = new Headers();
+    headers.set('X-Admin-Secret', getSecret());
+    headers.set('Content-Type', 'application/json');
+    const response = await fetch(url, { headers });
+    if (response.status === 404) {
+      return { data: { id } as any };
+    }
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('makontv_admin_secret');
+        window.location.reload();
+      }
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body.error || `HTTP ${response.status}`);
+    }
     const data = await response.json();
     return { data };
   },
@@ -82,7 +109,7 @@ export const dataProvider: DataProvider = {
   deleteOne: async ({ resource, id }) => {
     const url = `${API_URL}/${resource}/${id}`;
     const response = await customFetch(url, { method: 'DELETE' });
-    const data = await response.json();
+    const data = await response.json().catch(() => ({ id }));
     return { data };
   },
 

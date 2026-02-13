@@ -5,7 +5,11 @@ import { EditButton, DeleteButton } from '@refinedev/antd';
 import { JsonbLangInput, JsonbLangDisplay } from '../../components/JsonbLangInput';
 
 export const GenreList: React.FC = () => {
-  const { tableProps } = useTable({ resource: 'genres' });
+  const { tableProps } = useTable({
+    resource: 'genres',
+    sorters: { initial: [{ field: 'sortOrder', order: 'asc' }] },
+    filters: { initial: [] },
+  });
   return (
     <List>
       <Table {...tableProps} rowKey="id">
