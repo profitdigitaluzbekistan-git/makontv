@@ -8,7 +8,7 @@
  *
  * Cache is ONLY used as offline fallback, never served over network.
  */
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 const SHELL_CACHE = 'makontv-shell-' + CACHE_VERSION;
 const IMG_CACHE = 'makontv-img-' + CACHE_VERSION;
 

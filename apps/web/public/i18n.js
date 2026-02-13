@@ -33,7 +33,6 @@
     'Топ-10 за неделю': 'Haftalik Top-10',
 
     // ═══ MOVIE DETAIL ═══
-    'Тень Самарканда': 'Samarqand soyasi',
     'Триллер': 'Triller',
     'Детектив': 'Detektiv',
     'Драма': 'Drama',
@@ -60,10 +59,8 @@
     'Длительность': 'Davomiyligi',
     'Узбекистан': 'O\'zbekiston',
     'Все права защищены.': 'Barcha huquqlar himoyalangan.',
-    'Загадочные исчезновения в древнем Самарканде приводят молодого следователя к тайнам, скрытым веками. Сплетение прошлого и настоящего раскрывает истину, способную изменить судьбы миллионов.': 'Qadimiy Samarqanddagi sirli yo\'qolishlar yosh tergovchini asrlar davomida yashirilgan sirlarga olib keladi. O\'tmish va hozirgi zamonnning chirmashishi millionlab odamlarning taqdirini o\'zgartira oladigan haqiqatni ochib beradi.',
 
     // ═══ SERIES DETAIL ═══
-    'Код: Ташкент': 'Kod: Toshkent',
     'Сезон': 'Mavsum',
     'серий': 'qism',
     'серия': 'qism',

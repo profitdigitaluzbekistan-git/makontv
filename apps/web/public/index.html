@@ -1031,18 +1031,18 @@ a{color:inherit;text-decoration:none}
 
 <!-- ═══════════ PAGE: SERIES DETAIL ═══════════ -->
 <div class="page" id="page-series-detail">
-  <div class="bread"><div class="ctn"><div class="bread-in"><a href="#" onclick="go('home');return false">Сериалы</a><span>·</span><a href="#" onclick="go('catalog-series');return false">Триллер</a><span>·</span><span>Код: Ташкент</span></div></div></div>
+  <div class="bread"><div class="ctn"><div class="bread-in"><a href="#" onclick="go('home');return false">Сериалы</a><span>·</span><span class="bread-genre"></span><span>·</span><span class="bread-title"></span></div></div></div>
   <section class="d-hero">
-    <div class="d-hero-bg"><div class="d-hero-bg-i" style="background:linear-gradient(135deg,#0f3460,#16213e,#1a1a2e)"></div></div>
+    <div class="d-hero-bg"><div class="d-hero-bg-i"></div></div>
     <div class="d-hero-ct"><div class="d-hero-info">
-      <h1 class="d-title">Код: Ташкент</h1>
-      <div class="d-meta"><span class="d-rating">8.7</span><span class="d-mt">2025</span><span class="d-dot"></span><span class="d-mt">Сезон 1</span><span class="d-dot"></span><span class="d-mt">10 серий</span><span class="d-dot"></span><span class="d-mt">16+</span></div>
-      <div class="d-chips"><div class="d-chip">Триллер</div><div class="d-chip">Криминал</div><div class="d-chip">Драма</div></div>
-      <p class="d-desc">Молодой программист из Ташкента случайно обнаруживает уязвимость в банковской системе. Теперь за ним охотятся все — от спецслужб до криминальных группировок. Каждая серия — новый виток событий.</p>
+      <h1 class="d-title"></h1>
+      <div class="d-meta"></div>
+      <div class="d-chips"></div>
+      <p class="d-desc"></p>
       <div class="d-act">
-        <button class="btn btn-p lg" onclick="playEpisode('Код: Ташкент','S1 · E5 «Точка невозврата»')"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg><span class="btn-sub"><span>Серия 5</span><span id="serSub">Продолжить</span></span></button>
+        <button class="btn btn-p lg" id="serWatch" onclick="playSeriesEpisode()"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Смотреть</button>
         <button class="btn-ic" onclick="handleSaveGlobal()" title="В избранное"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></button>
-        <button class="btn-ic" onclick="go('referral')" title="Поделиться"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></button>
+        <button class="btn-ic" title="Поделиться"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></button>
       </div>
     </div></div>
   </section>
@@ -1053,7 +1053,6 @@ a{color:inherit;text-decoration:none}
       <div class="sec-h" style="margin-bottom:var(--sp16)"><h2 class="sec-t">Сезоны</h2></div>
       <div class="ep-season-sel" id="epSeasonSel"></div>
       <div class="ep-grid" id="epGrid"></div>
-      <div class="ep-more" id="epMore" style="display:none"><button class="ep-more-btn" onclick="showMoreEpisodes()">Показать ещё</button></div>
     </div>
   </div>
 
@@ -1062,14 +1061,8 @@ a{color:inherit;text-decoration:none}
     <div class="ctn">
       <div class="sec-h" style="margin-bottom:var(--sp24)"><h2 class="sec-t">О сериале</h2></div>
       <div class="about-in">
-        <div><p class="about-desc">Технотриллер, основанный на реальных событиях. Сериал исследует тёмную сторону цифровой экономики Центральной Азии и ставит вопросы о границах между правосудием и местью.</p></div>
-        <div class="about-dets">
-          <div class="about-r"><span class="about-l">Год</span><span class="about-v">2025</span></div>
-          <div class="about-r"><span class="about-l">Страна</span><span class="about-v">Узбекистан</span></div>
-          <div class="about-r"><span class="about-l">Жанр</span><span class="about-v">Триллер, Криминал, Драма</span></div>
-          <div class="about-r"><span class="about-l">Режиссёр</span><span class="about-v"><a href="#" onclick="openActor('Фаррух Сафаров','Режиссёр');return false" style="color:var(--t1);text-decoration:none;border-bottom:1px dashed var(--t3)">Фаррух Сафаров</a></span></div>
-          <div class="about-r"><span class="about-l">В ролях</span><span class="about-v"><a href="#" onclick="openActor('Достон Рахимов','Актёр');return false" style="color:var(--t1);text-decoration:none;border-bottom:1px dashed var(--t3)">Достон Рахимов</a>, <a href="#" onclick="openActor('Малика Юсупова','Актриса');return false" style="color:var(--t1);text-decoration:none;border-bottom:1px dashed var(--t3)">Малика Юсупова</a></span></div>
-        </div>
+        <div><p class="about-desc"></p></div>
+        <div class="about-dets"></div>
       </div>
     </div>
   </div>
@@ -1207,21 +1200,7 @@ a{color:inherit;text-decoration:none}
       </div>
     </div>
     <div class="dl-list" id="dlList">
-      <div class="dl-card">
-        <div class="dl-thumb"><div class="dl-thumb-bg"></div></div>
-        <div class="dl-info"><div class="dl-name">Тень Самарканда</div><div class="dl-meta">Фильм · 2ч 18мин</div><div class="dl-size">Загружено · 2.1 ГБ (4K)</div></div>
-        <div class="dl-actions"><button class="btn-ic" style="width:36px;height:36px" onclick="playEpisode('Тень Самарканда','')"><svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px"><path d="M8 5v14l11-7z"/></svg></button><button class="btn-ic" style="width:36px;height:36px" onclick="this.closest('.dl-card').style.display='none';showToast('Загрузка удалена')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button></div>
-      </div>
-      <div class="dl-card">
-        <div class="dl-thumb"><div class="dl-thumb-bg" style="background:linear-gradient(135deg,#0f3460,#16213e)"></div></div>
-        <div class="dl-info"><div class="dl-name">Код: Ташкент · S1E5</div><div class="dl-meta">Сериал · 48мин</div><div class="dl-size">Загружается…</div><div class="dl-prog"><div class="dl-prog-f" style="width:67%"></div></div></div>
-        <div class="dl-actions"><button class="btn-ic" style="width:36px;height:36px" onclick="showToast('Пауза загрузки')"><svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/></svg></button></div>
-      </div>
-      <div class="dl-card">
-        <div class="dl-thumb"><div class="dl-thumb-bg" style="background:linear-gradient(135deg,#2d1b69,#11998e)"></div></div>
-        <div class="dl-info"><div class="dl-name">Последний караван</div><div class="dl-meta">Фильм · 1ч 45мин</div><div class="dl-size">Загружено · 1.8 ГБ (1080p)</div></div>
-        <div class="dl-actions"><button class="btn-ic" style="width:36px;height:36px" onclick="playEpisode('Последний караван','')"><svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px"><path d="M8 5v14l11-7z"/></svg></button><button class="btn-ic" style="width:36px;height:36px" onclick="this.closest('.dl-card').style.display='none';showToast('Загрузка удалена')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button></div>
-      </div>
+      <div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><div class="empty-title">Нет загрузок</div><div class="empty-desc">Скачивайте фильмы и сериалы для просмотра офлайн</div></div>
     </div>
   </div>
 </div>
@@ -1308,7 +1287,7 @@ a{color:inherit;text-decoration:none}
     </div>
   </div>
   <div class="search-results" id="searchResults">
-    <div class="search-hint">Попробуйте: «Тень Самарканда», «Триллер», «Караван»</div>
+    <div class="search-hint">Введите название фильма или сериала</div>
   </div>
 </div>
 
@@ -1397,10 +1376,7 @@ function rCW(id){
 
 /* ═══ RENDER: Trailers ═══ */
 function rTR(id){
-  const items=[{t:"Официальный трейлер",s:"2:34"},{t:"Трейлер (дублированный)",s:"2:15"},{t:"За кадром: Самарканд",s:"5:48"},{t:"Интервью с режиссёром",s:"8:12"}];
-  document.getElementById(id).innerHTML=items.map((it,i)=>
-    `<div class="tr-c"><div class="tr-img"><div class="tr-poster ${PG(i+2)}"></div><div class="tr-play"><div class="play-c">${IC.play}</div></div></div><div class="tr-info"><div class="tr-t">${it.t}</div><div class="tr-s">${it.s}</div></div></div>`
-  ).join('');
+  document.getElementById(id).innerHTML='';
 }
 
 /* ═══ RENDER: Skeletons ═══ */
@@ -1461,29 +1437,9 @@ function closeSearch(){
   document.getElementById('searchOv').classList.remove('open');
   document.body.style.overflow='';
   document.getElementById('searchInput').value='';
-  document.getElementById('searchResults').innerHTML='<div class="search-hint">Попробуйте: «Тень Самарканда», «Триллер», «Караван»</div>';
+  document.getElementById('searchResults').innerHTML='<div class="search-hint">Введите название фильма или сериала</div>';
 }
-document.addEventListener('DOMContentLoaded',()=>{
-  const si=document.getElementById('searchInput');
-  let t;
-  si.addEventListener('input',()=>{
-    clearTimeout(t);
-    const q=si.value.trim().toLowerCase();
-    if(!q){document.getElementById('searchResults').innerHTML='<div class="search-hint">Попробуйте: «Тень Самарканда», «Триллер», «Караван»</div>';return;}
-    // Skeleton while "loading"
-    document.getElementById('searchResults').innerHTML='<div class="search-grid">'+Array(6).fill(0).map(()=>'<div class="skel-card"><div class="skel skel-poster"></div><div class="skel skel-text w60"></div></div>').join('')+'</div>';
-    t=setTimeout(()=>{
-      const all=[...M,...S];
-      const res=all.filter(t=>t.toLowerCase().includes(q));
-      if(res.length){
-        document.getElementById('searchResults').innerHTML=`<div class="search-hint">${res.length} результатов для «${si.value}»</div><div class="search-grid" id="sr-grid"></div>`;
-        rPC('sr-grid',res,'');
-      } else {
-        document.getElementById('searchResults').innerHTML=`<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><div class="empty-title">Ничего не найдено</div><div class="empty-desc">Попробуйте изменить запрос или проверить написание</div></div>`;
-      }
-    },350);
-  });
-});
+/* Search is handled by api-client.js via API */
 
 /* ═══ AUTH MODAL ═══ */
 function openAuth(){document.getElementById('authModal').classList.add('open');document.body.style.overflow='hidden';}
@@ -1527,8 +1483,12 @@ function go(page){
   }
   if(page==='library')renderLib();
   if(page==='plans')updatePlans();
-  if(page==='series-detail'){buildSeasonSelector();buildEpisodes(0);}
-  location.hash=page;
+  // Set hash with slug for deep linking
+  if((page==='detail'||page==='series-detail')&&window._currentSlug){
+    location.hash=page+'&slug='+encodeURIComponent(window._currentSlug);
+  } else {
+    location.hash=page;
+  }
 }
 
 /* ═══ SCROLL ═══ */
@@ -1598,7 +1558,7 @@ function handleWatch(){
     go('player');
     MakonAPI.initPlayer('playerContainer',m.trailerUrl,{title:m.title||''});
   } else {
-    go('catalog-films');
+    showToast('Видео скоро будет доступно');
   }
 }
 function handleSave(){
@@ -1657,7 +1617,7 @@ function showToast(msg){
 /* ═══ PLAYER ═══ */
 let playerFrom='detail';
 function playEpisode(title,ep,videoUrl){
-  playerFrom=location.hash.replace('#','')||'detail';
+  playerFrom=location.hash.replace(/^#/,'').split('&')[0]||'detail';
   go('player');
   if(videoUrl){
     MakonAPI.initPlayer('playerContainer',videoUrl,{title:title+(ep?' · '+ep:'')});
@@ -1673,109 +1633,23 @@ function playEpisode(title,ep,videoUrl){
   }
 }
 
-/* ═══ EPISODES ═══ */
-const SERIES_DATA={
-  seasons:[
-    {
-      num:1, title:'Сезон 1',
-      episodes:[
-        {n:1,t:'Уязвимость',d:'52 мин',p:100,grad:'#1a1a2e,#16213e'},
-        {n:2,t:'Первый контакт',d:'48 мин',p:100,grad:'#16213e,#0f3460'},
-        {n:3,t:'Ловушка',d:'51 мин',p:100,grad:'#0f3460,#1a1a2e'},
-        {n:4,t:'Двойная игра',d:'49 мин',p:100,grad:'#2d1b69,#11998e'},
-        {n:5,t:'Точка невозврата',d:'53 мин',p:48,grad:'#11998e,#1a1a2e'},
-        {n:6,t:'Тёмная сеть',d:'50 мин',p:0,grad:'#1a1a2e,#0f3460'},
-        {n:7,t:'Разоблачение',d:'47 мин',p:0,grad:'#16213e,#2d1b69'},
-        {n:8,t:'Побег',d:'55 мин',p:0,grad:'#0f3460,#16213e'},
-        {n:9,t:'Возвращение',d:'52 мин',p:0,grad:'#2d1b69,#0f3460'},
-        {n:10,t:'Код: Ташкент',d:'58 мин',p:0,grad:'#1a1a2e,#11998e'}
-      ]
-    },
-    {
-      num:2, title:'Сезон 2',
-      episodes:[
-        {n:1,t:'Новый код',d:'50 мин',p:0,grad:'#0f3460,#e94560'},
-        {n:2,t:'Призраки',d:'48 мин',p:0,grad:'#e94560,#0f3460'},
-        {n:3,t:'Глубже',d:'53 мин',p:0,grad:'#16213e,#e94560'},
-        {n:4,t:'Зеркало',d:'51 мин',p:0,grad:'#e94560,#16213e'},
-        {n:5,t:'Сигнал',d:'49 мин',p:0,grad:'#0f3460,#2d1b69'},
-        {n:6,t:'Западня',d:'54 мин',p:0,grad:'#2d1b69,#e94560'},
-        {n:7,t:'Откат',d:'47 мин',p:0,grad:'#e94560,#1a1a2e'},
-        {n:8,t:'Финал',d:'62 мин',p:0,grad:'#1a1a2e,#e94560'}
-      ]
-    }
-  ]
-};
-
-let epCurSeason=0;
-let epShowCount=8;
-
-function buildSeasonSelector(){
-  const sel=document.getElementById('epSeasonSel');
-  if(!sel)return;
-  sel.innerHTML=SERIES_DATA.seasons.map((s,i)=>
-    `<button class="ep-season-btn${i===epCurSeason?' active':''}" onclick="switchSeason(${i})">
-      ${s.title}<span class="ep-count">${s.episodes.length}</span>
-    </button>`
-  ).join('');
-}
-
-function buildEpisodes(seasonIdx){
-  if(seasonIdx!==undefined) epCurSeason=seasonIdx;
-  epShowCount=8;
-  const season=SERIES_DATA.seasons[epCurSeason];
-  if(!season)return;
-  renderEpisodeGrid(season);
-}
-
-function renderEpisodeGrid(season){
-  const grid=document.getElementById('epGrid');
-  const more=document.getElementById('epMore');
-  if(!grid)return;
-  const eps=season.episodes;
-  const visible=eps.slice(0,epShowCount);
-
-  grid.innerHTML=visible.map(e=>{
-    const state=e.p>=100?'watched':(e.p>0?'watching':'');
-    const prog=(e.p>0&&e.p<100)?`<div class="ep-thumb-prog"><div class="ep-thumb-prog-f" style="width:${e.p}%"></div></div>`:'';
-    const dur=`<span class="ep-dur">${e.d}</span>`;
-    return `<div class="ep-card ${state}" onclick="playEpisode('Код: Ташкент','S${season.num} · Серия ${e.n} «${e.t}»')">
-      <div class="ep-thumb">
-        <div class="ep-thumb-bg" style="background:linear-gradient(135deg,${e.grad})"></div>
-        <div class="ep-thumb-play"><div class="play-c"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div></div>
-        ${dur}${prog}
-      </div>
-      <div class="ep-label">${e.n}. <b>${e.t}</b></div>
-    </div>`;
-  }).join('');
-
-  if(more){
-    more.style.display=(eps.length>epShowCount)?'flex':'none';
+/* ═══ EPISODES (loaded from API via api-client.js) ═══ */
+function playSeriesEpisode(){
+  var s=window._currentSeries;
+  if(!s)return;
+  var seasons=s.seasons||[];
+  var ep=seasons[0]&&seasons[0].episodes&&seasons[0].episodes[0];
+  if(ep&&ep.videoUrl){
+    playEpisode(s.title||'','Серия '+ep.number+' «'+(ep.title||'')+'»',ep.videoUrl);
+  } else if(s.trailerUrl){
+    playEpisode(s.title||'','Трейлер',s.trailerUrl);
+  } else {
+    showToast('Видео скоро будет доступно');
   }
 }
 
-function showMoreEpisodes(){
-  epShowCount+=8;
-  const season=SERIES_DATA.seasons[epCurSeason];
-  if(season)renderEpisodeGrid(season);
-}
-
-function switchSeason(idx){
-  epCurSeason=idx;
-  document.querySelectorAll('.ep-season-btn').forEach((b,i)=>b.classList.toggle('active',i===idx));
-  buildEpisodes(idx);
-}
-
-/* ═══ ACTOR PAGE ═══ */
-const ACTOR_DATA={
-  'Азиз Каримов':{role:'Режиссёр',bio:'Один из ведущих режиссёров нового узбекского кино. Выпускник ВГИКа. Его дебютный фильм «Дорога домой» получил приз на фестивале в Бусане. «Тень Самарканда» — его третья полнометражная работа.',films:8,awards:5,grad:'#2d1b69,#11998e'},
-  'Шахзод Мирзиёев':{role:'Актёр',bio:'Родился в Самарканде. Выпускник Ташкентского театрального института. Звезда сериала «Наследники». За роль в «Тень Самарканда» номинирован на «Золотой Хумо».',films:12,awards:3,grad:'#667eea,#764ba2'},
-  'Лола Каримова':{role:'Актриса',bio:'Театральная и киноактриса. Известна по ролям в «Дочь ветра» и «Крепость». Обладательница премии «Лучшая женская роль» Ташкентского кинофестиваля.',films:15,awards:4,grad:'#f093fb,#f5576c'},
-  'Тимур Рашидов':{role:'Актёр',bio:'Актёр театра и кино. Снимался в международных проектах. Владеет четырьмя языками. В «Тень Самарканда» сыграл антагониста.',films:20,awards:2,grad:'#4facfe,#00f2fe'},
-  'Фаррух Сафаров':{role:'Режиссёр',bio:'Молодой режиссёр, выпускник киношколы в Лондоне. «Код: Ташкент» — его первый крупный проект для стриминга. Специализируется на технотриллерах.',films:3,awards:1,grad:'#0f3460,#e94560'},
-  'Достон Рахимов':{role:'Актёр',bio:'Восходящая звезда узбекского кино. До актёрской карьеры работал программистом, что помогло ему в роли Достона в «Код: Ташкент».',films:5,awards:1,grad:'#11998e,#38ef7d'},
-  'Малика Юсупова':{role:'Актриса',bio:'Актриса и модель. Дебютировала в кино в сериале «Перекрёсток». В «Код: Ташкент» исполнила роль Малики — загадочного агента.',films:7,awards:2,grad:'#fc5c7d,#6a82fb'}
-};
+/* ═══ ACTOR PAGE (loaded from API via api-client.js) ═══ */
+const ACTOR_DATA={};
 
 function openActor(name,fallbackRole){
   const data=ACTOR_DATA[name]||{role:fallbackRole||'Актёр',bio:'Информация об этом человеке скоро появится на MakonTV.',films:Math.floor(Math.random()*15)+3,awards:Math.floor(Math.random()*5),grad:'#667eea,#764ba2'};
@@ -1821,12 +1695,44 @@ function filterCatalog(genre,type){
   else document.getElementById(id).innerHTML='<div class="empty" style="grid-column:1/-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><div class="empty-title">Ничего не найдено</div></div>';
 }
 
+/* ═══ HASH PARSING ═══ */
+function parseHash(hash){
+  var raw=hash.replace(/^#/,'');
+  var parts=raw.split('&');
+  var page=parts[0]||'home';
+  var params={};
+  for(var i=1;i<parts.length;i++){
+    var kv=parts[i].split('=');
+    if(kv.length===2)params[kv[0]]=decodeURIComponent(kv[1]);
+  }
+  return{page:page,slug:params.slug||null};
+}
+var _navLock=false;
+function navigateFromHash(){
+  if(_navLock)return;
+  _navLock=true;
+  var h=parseHash(location.hash);
+  var validPages=['home','detail','catalog-films','catalog-series','series-detail','profile','personal','security','plans','checkout','player','actor','library','downloads','referral','profiles','404'];
+  if(!validPages.includes(h.page)){go('home');_navLock=false;return;}
+  if(h.slug)window._currentSlug=h.slug;
+  if((h.page==='detail'||h.page==='series-detail')&&h.slug){
+    if(window.MakonAPI){
+      MakonAPI.goDetail(h.page,h.slug);
+    } else {
+      go(h.page);
+      window._pendingDetail={page:h.page,slug:h.slug};
+    }
+  } else {
+    go(h.page);
+  }
+  _navLock=false;
+}
+
 /* ═══ INIT ═══ */
 buildHome();buildCatalogs();
 setS('guest');
-const h=location.hash.replace('#','');
-if(['home','detail','catalog-films','catalog-series','series-detail','profile','personal','security','plans','checkout','player','actor','library','downloads','referral','profiles','404'].includes(h))go(h);else go('home');
-window.addEventListener('hashchange',()=>{const p=location.hash.replace('#','');if(p)go(p);});
+navigateFromHash();
+window.addEventListener('hashchange',function(){navigateFromHash();});
 </script>
 <script>
 // API Config — change this when deploying

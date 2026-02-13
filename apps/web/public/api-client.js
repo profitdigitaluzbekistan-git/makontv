@@ -315,7 +315,7 @@
       const sr = document.getElementById('searchResults');
 
       if (!q) {
-        sr.innerHTML = '<div class="search-hint">Попробуйте: «Тень Самарканда», «Триллер», «Караван»</div>';
+        sr.innerHTML = '<div class="search-hint">Введите название фильма или сериала</div>';
         return;
       }
 
@@ -356,12 +356,14 @@
   MakonAPI.goDetail = function(page, slug) {
     if (!slug) { go(page); return; }
 
-    // Store slug for the page
+    // Store slug for the page — go() will include it in the hash
     window._currentSlug = slug;
     window._currentPage = page;
 
+    // Show page (go() sets hash with slug)
     go(page);
 
+    // Load real data
     if (page === 'detail') {
       loadMovieDetail(slug);
     } else if (page === 'series-detail') {
@@ -476,10 +478,13 @@
       if (titleEl) titleEl.textContent = show.title;
 
       // Breadcrumb
-      const breadLast = document.querySelector('#page-series-detail .bread-in');
-      if (breadLast) {
-        const spans = breadLast.querySelectorAll('span:last-child');
-        if (spans.length) spans[spans.length - 1].textContent = show.title;
+      const breadIn = document.querySelector('#page-series-detail .bread-in');
+      if (breadIn) {
+        var genreName = (show.genres && show.genres[0]) ? show.genres[0].name : '';
+        var breadGenre = breadIn.querySelector('.bread-genre');
+        var breadTitle = breadIn.querySelector('.bread-title');
+        if (breadGenre) breadGenre.textContent = genreName;
+        if (breadTitle) breadTitle.textContent = show.title;
       }
 
       // Description
@@ -498,7 +503,7 @@
         metaEl.innerHTML = [
           show.rating ? `<span class="d-rating">${show.rating}</span>` : '',
           show.year ? `<span class="d-mt">${show.year}</span>` : '',
-          seasonCount ? `<span class="d-dot"></span><span class="d-mt">Сезон ${seasonCount}</span>` : '',
+          seasonCount ? `<span class="d-dot"></span><span class="d-mt">${seasonCount} сезон${seasonCount > 1 ? (seasonCount < 5 ? 'а' : 'ов') : ''}</span>` : '',
           episodeCount ? `<span class="d-dot"></span><span class="d-mt">${episodeCount} серий</span>` : '',
           show.ageRating ? `<span class="d-dot"></span><span class="d-mt">${show.ageRating}</span>` : '',
         ].filter(Boolean).join('');
@@ -538,11 +543,15 @@
       // Build season selector from API data
       if (show.seasons && show.seasons.length > 0) {
         buildSeasonsFromAPI(show.seasons);
+      } else {
+        var grid = document.getElementById('epGrid');
+        if (grid) grid.innerHTML = '<div class="empty" style="grid-column:1/-1;padding:var(--sp32) 0"><div class="empty-title">Эпизоды скоро появятся</div></div>';
       }
 
       // Similar series
       if (show.similar && show.similar.length > 0) {
-        renderCards('car-ser-rec', show.similar, '');
+        var simItems = show.similar.map(function(s) { s.type = s.type || 'series'; return s; });
+        renderCards('car-ser-rec', simItems, '');
       }
 
     }).catch(err => {
@@ -551,49 +560,59 @@
   }
 
   function buildSeasonsFromAPI(seasonsData) {
-    // Season selector
-    const selEl = document.querySelector('#page-series-detail .ep-season-sel, #epSeasonSel');
+    // Season selector — uses ep-season-btn class from index.html CSS
+    const selEl = document.getElementById('epSeasonSel');
     if (selEl) {
-      selEl.innerHTML = seasonsData.map((s, i) =>
-        `<button class="season-btn ${i === 0 ? 'active' : ''}" onclick="MakonAPI.switchSeason(${i})">${s.title || 'Сезон ' + s.number}</button>`
-      ).join('');
+      selEl.innerHTML = seasonsData.map(function(s, i) {
+        var label = s.title || ('Сезон ' + s.number);
+        var count = s.episodes ? s.episodes.length : 0;
+        return '<button class="ep-season-btn' + (i === 0 ? ' active' : '') + '" onclick="MakonAPI.switchSeason(' + i + ')">' +
+          label + '<span class="ep-count">' + count + '</span></button>';
+      }).join('');
     }
 
     // Render first season episodes
     if (seasonsData[0]) {
-      renderEpisodesFromAPI(seasonsData[0].episodes || []);
+      renderEpisodesFromAPI(seasonsData[0].episodes || [], seasonsData[0].number || 1);
     }
   }
 
-  function renderEpisodesFromAPI(episodes) {
-    const grid = document.querySelector('#page-series-detail .ep-grid, #epGrid');
+  function renderEpisodesFromAPI(episodes, seasonNum) {
+    var grid = document.getElementById('epGrid');
     if (!grid) return;
+    var seriesTitle = (window._currentSeries && window._currentSeries.title) || '';
+    var GRADS = ['#1a1a2e,#16213e','#16213e,#0f3460','#0f3460,#1a1a2e','#2d1b69,#11998e','#11998e,#1a1a2e','#1a1a2e,#0f3460','#16213e,#2d1b69','#0f3460,#16213e'];
 
-    grid.innerHTML = episodes.map((ep, i) => {
-      const title = ep.title || `Серия ${ep.number}`;
-      const durText = ep.durationMin ? `${ep.durationMin} мин` : '';
+    grid.innerHTML = episodes.map(function(ep, i) {
+      var title = ep.title || ('Серия ' + ep.number);
+      var durText = ep.durationMin ? ep.durationMin + ' мин' : '';
+      var grad = GRADS[i % GRADS.length];
+      var thumb = ep.thumbnailUrl
+        ? '<img src="' + ep.thumbnailUrl + '" alt="" style="width:100%;height:100%;object-fit:cover">'
+        : '<div class="ep-thumb-bg" style="background:linear-gradient(135deg,' + grad + ')"></div>';
+      var videoUrl = ep.videoUrl ? ep.videoUrl.replace(/'/g, "\\'") : '';
+      var safeTitle = seriesTitle.replace(/'/g, "\\'");
+      var epLabel = 'S' + (seasonNum || 1) + ' · Серия ' + ep.number + ' «' + title.replace(/'/g, "\\'") + '»';
 
-      return `<div class="ep ${i === 0 ? 'ep-active' : ''}" onclick="playEpisode('${title}','')">
-        <div class="ep-thumb"><div class="ep-poster ${PG(i)}"></div>
-          <div class="ep-play"><div class="play-c play-sm">${IC.play}</div></div>
-          ${ep.isFree ? '<div class="ep-free">Бесплатно</div>' : ''}
-          ${durText ? `<div class="ep-dur">${durText}</div>` : ''}
-        </div>
-        <div class="ep-info"><div class="ep-num">Серия ${ep.number}</div><div class="ep-t">${title}</div>
-          ${ep.description ? `<div class="ep-desc">${ep.description}</div>` : ''}
-        </div>
-      </div>`;
+      return '<div class="ep-card" onclick="playEpisode(\'' + safeTitle + '\',\'' + epLabel + '\'' + (videoUrl ? ',\'' + videoUrl + '\'' : '') + ')">' +
+        '<div class="ep-thumb">' + thumb +
+          '<div class="ep-thumb-play"><div class="play-c"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div></div>' +
+          (durText ? '<span class="ep-dur">' + durText + '</span>' : '') +
+          (ep.isFree ? '<span class="ep-dur" style="left:8px;right:auto;background:var(--accent);color:#0A0A0F">Бесплатно</span>' : '') +
+        '</div>' +
+        '<div class="ep-label">' + ep.number + '. <b>' + title + '</b></div>' +
+      '</div>';
     }).join('');
   }
 
   MakonAPI.switchSeason = function(idx) {
-    const seasons = window._seriesSeasons || [];
+    var seasons = window._seriesSeasons || [];
     if (!seasons[idx]) return;
 
     // Update active button
-    document.querySelectorAll('.season-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+    document.querySelectorAll('.ep-season-btn').forEach(function(b, i) { b.classList.toggle('active', i === idx); });
 
-    renderEpisodesFromAPI(seasons[idx].episodes || []);
+    renderEpisodesFromAPI(seasons[idx].episodes || [], seasons[idx].number || (idx + 1));
   };
 
   // ═══════════════════════════
@@ -791,20 +810,16 @@
   window.MakonAPI = MakonAPI;
 
   // ═══════════════════════════
-  // OVERRIDE go() to integrate API detail loading
+  // OVERRIDE go() — no longer needed for detail loading since goDetail handles it.
+  // Keep original go() untouched. Detail loading happens via goDetail() or navigateFromHash().
   // ═══════════════════════════
-  const _origGo = window.go;
-  window.go = function(page) {
-    _origGo(page);
 
-    // After go() shows the page, load real data for detail pages
-    if (page === 'detail' && window._currentSlug) {
-      loadMovieDetail(window._currentSlug);
-    }
-    if (page === 'series-detail' && window._currentSlug) {
-      loadSeriesDetail(window._currentSlug);
-    }
-  };
+  // Handle pending detail from hash (page loaded before api-client.js)
+  if (window._pendingDetail) {
+    var pd = window._pendingDetail;
+    window._pendingDetail = null;
+    MakonAPI.goDetail(pd.page, pd.slug);
+  }
 
   // ═══════════════════════════
   // RE-RENDER WITH API DATA
