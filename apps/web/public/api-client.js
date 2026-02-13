@@ -46,7 +46,7 @@
     const poster = item.posterUrl
       ? `<img src="${item.posterUrl}" alt="${title}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`
       : `<div class="pc-poster ${PG(index)}"></div>`;
-    const slug = item.slug || '';
+    const slug = (item.slug || '').replace(/'/g, "\\'");
     const type = item.type || 'movie';
     const clickPage = type === 'series' ? 'series-detail' : 'detail';
 
@@ -317,7 +317,7 @@
   };
 
   function loadMovieDetail(slug) {
-    api(`/api/movies/${slug}`).then(movie => {
+    api(`/api/movies/${encodeURIComponent(slug)}`).then(movie => {
       // Update title
       const titleEl = document.querySelector('#page-detail .d-title');
       if (titleEl) titleEl.textContent = movie.title;
@@ -417,7 +417,7 @@
   // 5. SERIES DETAIL
   // ═══════════════════════════
   function loadSeriesDetail(slug) {
-    api(`/api/series/${slug}`).then(show => {
+    api(`/api/series/${encodeURIComponent(slug)}`).then(show => {
       // Title
       const titleEl = document.querySelector('#page-series-detail .d-title');
       if (titleEl) titleEl.textContent = show.title;

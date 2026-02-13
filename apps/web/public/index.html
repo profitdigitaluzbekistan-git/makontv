@@ -694,8 +694,7 @@ a{color:inherit;text-decoration:none}
       <h1 class="d-title"></h1>
       <div class="d-meta"></div>
       <div class="d-chips"></div>
-      <p class="d-desc clamp" id="dDesc"></p>
-      <button class="d-more" id="dMore" onclick="toggleDesc()">Показать больше <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></button>
+      <p class="d-desc" id="dDesc"></p>
       <div class="d-act">
         <button class="btn btn-p lg" id="ctaW" onclick="handleWatch()"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Смотреть</button>
         <button class="btn-ic" id="ctaSv" onclick="handleSave()" title="В избранное"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></button>
@@ -712,39 +711,6 @@ a{color:inherit;text-decoration:none}
     </div>
     </div>
   </div>
-  <section class="sec">
-    <div class="ctn">
-    <div class="sec-h"><h2 class="sec-t">Материалы фильма</h2><span class="sec-m">Смотреть все <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></span></div>
-    <div style="margin-bottom:var(--sp16)"><div class="tab-chips"><button class="tab-c active">Трейлеры</button><button class="tab-c">Кадры</button></div></div>
-    <div class="car-w"><div class="car" id="car-tr"></div></div>
-    </div>
-  </section>
-  <!-- Reviews -->
-  <div class="sec reviews-sec">
-    <div class="ctn">
-      <div class="sec-h" style="margin-bottom:var(--sp24)"><h2 class="sec-t">Отзывы зрителей</h2></div>
-      <div class="rev-summary">
-        <div><div class="rev-big-score">8.4</div></div>
-        <div>
-          <div class="rev-stars"><svg viewBox="0 0 24 24" stroke-width="1"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><svg viewBox="0 0 24 24" stroke-width="1"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><svg viewBox="0 0 24 24" stroke-width="1"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><svg viewBox="0 0 24 24" stroke-width="1"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><svg viewBox="0 0 24 24" stroke-width="1" class="empty"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div>
-          <div class="rev-count">1 247 оценок</div>
-        </div>
-        <div class="rev-bars">
-          <div class="rev-bar-row"><span class="rev-bar-n">5</span><div class="rev-bar-bg"><div class="rev-bar-f" style="width:62%"></div></div></div>
-          <div class="rev-bar-row"><span class="rev-bar-n">4</span><div class="rev-bar-bg"><div class="rev-bar-f" style="width:24%"></div></div></div>
-          <div class="rev-bar-row"><span class="rev-bar-n">3</span><div class="rev-bar-bg"><div class="rev-bar-f" style="width:8%"></div></div></div>
-          <div class="rev-bar-row"><span class="rev-bar-n">2</span><div class="rev-bar-bg"><div class="rev-bar-f" style="width:4%"></div></div></div>
-          <div class="rev-bar-row"><span class="rev-bar-n">1</span><div class="rev-bar-bg"><div class="rev-bar-f" style="width:2%"></div></div></div>
-        </div>
-      </div>
-      <div class="rev-list">
-        <div class="rev-card"><div class="rev-card-top"><div class="rev-card-av">А</div><div><div class="rev-card-name">Алишер К.</div><div class="rev-card-date">3 дня назад · ★★★★★</div></div></div><div class="rev-card-text">Потрясающий фильм! Наконец-то узбекский кинематограф вышел на мировой уровень. Операторская работа просто невероятная, а сюжет держит в напряжении до последней минуты.</div></div>
-        <div class="rev-card"><div class="rev-card-top"><div class="rev-card-av" style="background:linear-gradient(135deg,#f093fb,#f5576c)">Н</div><div><div class="rev-card-name">Нодира М.</div><div class="rev-card-date">Неделю назад · ★★★★</div></div></div><div class="rev-card-text">Очень атмосферный фильм. Самарканд показан невероятно красиво. Немного затянута середина, но финал всё компенсирует. Рекомендую!</div></div>
-        <div class="rev-card"><div class="rev-card-top"><div class="rev-card-av" style="background:linear-gradient(135deg,#4facfe,#00f2fe)">Р</div><div><div class="rev-card-name">Руслан Т.</div><div class="rev-card-date">2 недели назад · ★★★★★</div></div></div><div class="rev-card-text">Смотрел дважды — и второй раз ещё лучше. Столько деталей замечаешь! Музыка, костюмы, диалоги — всё на высшем уровне. Жду продолжение.</div></div>
-      </div>
-    </div>
-  </div>
-
   <section class="sec">
     <div class="ctn">
     <div class="sec-h"><h2 class="sec-t">С этим фильмом смотрят</h2><span class="sec-m">Все <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></span></div>
