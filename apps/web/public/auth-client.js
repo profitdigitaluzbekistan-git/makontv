@@ -262,26 +262,22 @@
   // ═══ HOOK INTO AUTH MODAL ═══
 
   // Override doLogin to use real auth
-  const _origDoLogin = window.doLogin;
   window.doLogin = async function() {
-    const emailInput = document.querySelector('#auth-email, #authModal input[type="email"]');
-    const passInput = document.querySelector('#auth-pass, #authModal input[type="password"]');
-
-    if (!emailInput || !passInput) { _origDoLogin?.(); return; }
-
-    const email = emailInput.value;
-    const password = passInput.value;
-
-    if (!email || !password) { showToast('Введите email и пароль'); return; }
-
     // Determine if register or login based on active tab
     const isRegister = document.querySelector('.auth-tab.active')?.textContent?.includes('Регистр');
 
-    let user;
+    let email, password, user;
+
     if (isRegister) {
-      const nameInput = document.querySelector('#auth-name, #authModal input[placeholder*="Имя"]');
-      user = await MakonAPI.register(email, password, nameInput?.value || '');
+      email = document.getElementById('auth-email-reg')?.value;
+      password = document.getElementById('auth-pass-reg')?.value;
+      const name = document.getElementById('auth-name')?.value || '';
+      if (!email || !password) { showToast('Введите email и пароль'); return; }
+      user = await MakonAPI.register(email, password, name);
     } else {
+      email = document.getElementById('auth-email')?.value;
+      password = document.getElementById('auth-pass')?.value;
+      if (!email || !password) { showToast('Введите email и пароль'); return; }
       user = await MakonAPI.login(email, password);
     }
 

@@ -9,8 +9,8 @@ import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { authRateLimit, apiRateLimit, searchRateLimit } from './middleware/rateLimit';
 import { getDb } from './db';
-import { genres, notifications } from '@makontv/db';
-import { desc, isNull } from 'drizzle-orm';
+import { genres, notifications, reviews, users, movies, series } from '@makontv/db';
+import { desc, isNull, eq, and, sql } from 'drizzle-orm';
 
 // Routes
 import homeRoute from './routes/home';
@@ -89,6 +89,57 @@ app.get('/api/notifications', async (c) => {
     .orderBy(desc(notifications.createdAt))
     .limit(20);
   return c.json(notifs);
+});
+
+// ═══ PUBLIC REVIEWS ═══
+app.get('/api/reviews', async (c) => {
+  const db = getDb();
+  const type = c.req.query('type');
+  const id = c.req.query('id');
+  if (!type || !id) return c.json([]);
+  const condition = type === 'movie' ? eq(reviews.movieId, id) : eq(reviews.seriesId, id);
+  const result = await db.select({
+    id: reviews.id, rating: reviews.rating, text: reviews.text, createdAt: reviews.createdAt,
+    userName: users.displayName,
+  }).from(reviews)
+    .leftJoin(users, eq(reviews.userId, users.id))
+    .where(condition)
+    .orderBy(desc(reviews.createdAt))
+    .limit(50);
+  return c.json(result.map(r => ({ ...r, userName: r.userName || 'Пользователь' })));
+});
+
+app.post('/api/reviews', async (c) => {
+  const db = getDb();
+  const body = await c.req.json();
+  // For now, require either userId or create as guest (first user)
+  let userId = body.userId;
+  if (!userId) {
+    // Get or create a guest user
+    const [guest] = await db.select().from(users).limit(1);
+    if (!guest) return c.json({ error: 'No users' }, 400);
+    userId = guest.id;
+  }
+  const [review] = await db.insert(reviews).values({
+    userId,
+    movieId: body.movieId || null,
+    seriesId: body.seriesId || null,
+    rating: body.rating || 5,
+    text: body.text || '',
+  }).returning();
+
+  // Update movie/series average rating
+  if (body.movieId) {
+    const allReviews = await db.select().from(reviews).where(eq(reviews.movieId, body.movieId));
+    const avg = allReviews.reduce((s, r) => s + (r.rating || 0), 0) / allReviews.length;
+    await db.update(movies).set({ rating: parseFloat(avg.toFixed(1)), ratingCount: allReviews.length }).where(eq(movies.id, body.movieId));
+  }
+  if (body.seriesId) {
+    const allReviews = await db.select().from(reviews).where(eq(reviews.seriesId, body.seriesId));
+    const avg = allReviews.reduce((s, r) => s + (r.rating || 0), 0) / allReviews.length;
+    await db.update(series).set({ rating: parseFloat(avg.toFixed(1)), ratingCount: allReviews.length }).where(eq(series.id, body.seriesId));
+  }
+  return c.json(review, 201);
 });
 
 // ═══ ROUTES ═══

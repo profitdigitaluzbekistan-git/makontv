@@ -41133,10 +41133,10 @@ var PgEnumColumn = class extends PgColumn {
 // packages/db/node_modules/drizzle-orm/subquery.js
 var Subquery = class {
   static [entityKind] = "Subquery";
-  constructor(sql5, fields, alias, isWith = false, usedTables = []) {
+  constructor(sql6, fields, alias, isWith = false, usedTables = []) {
     this._ = {
       brand: "Subquery",
-      sql: sql5,
+      sql: sql6,
       selectedFields: fields,
       alias,
       isWith,
@@ -46744,10 +46744,10 @@ var PgRelationalQuery = class extends QueryPromise {
 
 // packages/db/node_modules/drizzle-orm/pg-core/query-builders/raw.js
 var PgRaw = class extends QueryPromise {
-  constructor(execute, sql5, query, mapBatchResult) {
+  constructor(execute, sql6, query, mapBatchResult) {
     super();
     this.execute = execute;
-    this.sql = sql5;
+    this.sql = sql6;
     this.query = query;
     this.mapBatchResult = mapBatchResult;
   }
@@ -47067,8 +47067,8 @@ var NoopCache = class extends Cache {
   async onMutate(_params) {
   }
 };
-async function hashQuery(sql5, params) {
-  const dataToHash = `${sql5}-${JSON.stringify(params)}`;
+async function hashQuery(sql6, params) {
+  const dataToHash = `${sql6}-${JSON.stringify(params)}`;
   const encoder = new TextEncoder();
   const data2 = encoder.encode(dataToHash);
   const hashBuffer = await crypto.subtle.digest("SHA-256", data2);
@@ -47375,8 +47375,8 @@ var NeonHttpSession = class extends PgSession {
     return this.clientQuery(query, params, { arrayMode: false, fullResults: true });
   }
   /** @internal */
-  async count(sql5, token) {
-    const res = await this.execute(sql5, token);
+  async count(sql6, token) {
+    const res = await this.execute(sql6, token);
     return Number(
       res["rows"][0]["count"]
     );
@@ -47791,8 +47791,8 @@ var referralRewards = pgTable("referral_rewards", {
 function createDb(databaseUrl) {
   const url = databaseUrl || process.env.DATABASE_URL;
   if (!url) throw new Error("DATABASE_URL is required");
-  const sql5 = Xs(url);
-  return drizzle(sql5, { schema: schema_exports });
+  const sql6 = Xs(url);
+  return drizzle(sql6, { schema: schema_exports });
 }
 
 // apps/api/src/db.ts
@@ -48396,10 +48396,10 @@ var PgEnumColumn2 = class extends PgColumn2 {
 // apps/api/node_modules/drizzle-orm/subquery.js
 var Subquery2 = class {
   static [entityKind2] = "Subquery";
-  constructor(sql5, selection, alias, isWith = false) {
+  constructor(sql6, selection, alias, isWith = false) {
     this._ = {
       brand: "Subquery",
-      sql: sql5,
+      sql: sql6,
       selectedFields: selection,
       alias,
       isWith
@@ -51270,6 +51270,49 @@ app.get("/api/notifications", async (c4) => {
   const db = getDb();
   const notifs = await db.select().from(notifications).where(isNull2(notifications.userId)).orderBy(desc2(notifications.createdAt)).limit(20);
   return c4.json(notifs);
+});
+app.get("/api/reviews", async (c4) => {
+  const db = getDb();
+  const type = c4.req.query("type");
+  const id = c4.req.query("id");
+  if (!type || !id) return c4.json([]);
+  const condition = type === "movie" ? eq2(reviews.movieId, id) : eq2(reviews.seriesId, id);
+  const result = await db.select({
+    id: reviews.id,
+    rating: reviews.rating,
+    text: reviews.text,
+    createdAt: reviews.createdAt,
+    userName: users.displayName
+  }).from(reviews).leftJoin(users, eq2(reviews.userId, users.id)).where(condition).orderBy(desc2(reviews.createdAt)).limit(50);
+  return c4.json(result.map((r4) => ({ ...r4, userName: r4.userName || "\u041F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044C" })));
+});
+app.post("/api/reviews", async (c4) => {
+  const db = getDb();
+  const body = await c4.req.json();
+  let userId = body.userId;
+  if (!userId) {
+    const [guest] = await db.select().from(users).limit(1);
+    if (!guest) return c4.json({ error: "No users" }, 400);
+    userId = guest.id;
+  }
+  const [review] = await db.insert(reviews).values({
+    userId,
+    movieId: body.movieId || null,
+    seriesId: body.seriesId || null,
+    rating: body.rating || 5,
+    text: body.text || ""
+  }).returning();
+  if (body.movieId) {
+    const allReviews = await db.select().from(reviews).where(eq2(reviews.movieId, body.movieId));
+    const avg = allReviews.reduce((s4, r4) => s4 + (r4.rating || 0), 0) / allReviews.length;
+    await db.update(movies).set({ rating: parseFloat(avg.toFixed(1)), ratingCount: allReviews.length }).where(eq2(movies.id, body.movieId));
+  }
+  if (body.seriesId) {
+    const allReviews = await db.select().from(reviews).where(eq2(reviews.seriesId, body.seriesId));
+    const avg = allReviews.reduce((s4, r4) => s4 + (r4.rating || 0), 0) / allReviews.length;
+    await db.update(series).set({ rating: parseFloat(avg.toFixed(1)), ratingCount: allReviews.length }).where(eq2(series.id, body.seriesId));
+  }
+  return c4.json(review, 201);
 });
 app.use("/api/auth/*", authRateLimit);
 app.use("/api/search", searchRateLimit);

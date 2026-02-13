@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { List, Create, Edit, useTable, useForm } from '@refinedev/antd';
 import {
   Table, Form, Input, InputNumber, Select, Switch, Tag, Space, Row, Col,
@@ -14,6 +14,7 @@ import {
   OrderedListOutlined, PlayCircleOutlined,
 } from '@ant-design/icons';
 import { JsonbLangInput, JsonbLangDisplay } from '../../components/JsonbLangInput';
+import { FileUpload } from '../../components/FileUpload';
 import { useNavigation, useCustom, useApiUrl } from '@refinedev/core';
 import { getAdminSecret } from '../../providers/dataProvider';
 
@@ -89,9 +90,37 @@ const STEPS = [
 ];
 
 const SeriesWizard: React.FC<{ isEdit?: boolean }> = ({ isEdit }) => {
+  const [collectionOptions, setCollectionOptions] = useState<{ value: string; label: string }[]>([]);
+  const [selectedCollectionIds, setSelectedCollectionIds] = useState<string[]>([]);
+  const selectedCollRef = useRef<string[]>([]);
+  const collectionsReadyRef = useRef(!isEdit);
+  selectedCollRef.current = selectedCollectionIds;
+
   const { formProps, saveButtonProps, form, formLoading } = useForm({
     resource: 'series',
     redirect: isEdit ? false : 'list',
+    onMutationSuccess: async (data: any) => {
+      const sid = data?.data?.id;
+      if (!sid || !collectionsReadyRef.current) return;
+      const collIds = selectedCollRef.current;
+      const headers: Record<string, string> = { 'X-Admin-Secret': getAdminSecret(), 'Content-Type': 'application/json' };
+      const apiFn = (url: string, method: string, body?: any) =>
+        fetch(`${(import.meta.env.VITE_API_URL || '') + '/admin'}${url}`, { method, headers, body: body ? JSON.stringify(body) : undefined });
+      try {
+        const allColls = await fetch(`${(import.meta.env.VITE_API_URL || '') + '/admin'}/collections?_limit=200`, { headers }).then(r => r.json());
+        const existingCollIds: string[] = [];
+        const existingItemMap: Record<string, string> = {};
+        for (const coll of allColls) {
+          const items: any[] = await fetch(`${(import.meta.env.VITE_API_URL || '') + '/admin'}/collection-items/${coll.id}`, { headers }).then(r => r.json());
+          const found = items.find((it: any) => it.seriesId === sid);
+          if (found) { existingCollIds.push(coll.id); existingItemMap[coll.id] = found.id; }
+        }
+        await Promise.all(existingCollIds.filter(id => !collIds.includes(id)).map(cid =>
+          apiFn(`/collection-items/${existingItemMap[cid]}`, 'DELETE')));
+        await Promise.all(collIds.filter(id => !existingCollIds.includes(id)).map(cid =>
+          apiFn('/collection-items', 'POST', { collectionId: cid, seriesId: sid, sortOrder: 99 })));
+      } catch (e) { console.error('Collection sync error:', e); }
+    },
   });
   const [currentStep, setCurrentStep] = useState(0);
   const [posterPreview, setPosterPreview] = useState('');
@@ -115,7 +144,37 @@ const SeriesWizard: React.FC<{ isEdit?: boolean }> = ({ isEdit }) => {
     else setPosterPreview('');
   }, [formValues?.posterUrl]);
 
+  // Fetch collection options
+  useEffect(() => {
+    const headers: Record<string, string> = { 'X-Admin-Secret': getAdminSecret(), 'Content-Type': 'application/json' };
+    fetch(`${apiUrl}/collections?_limit=200`, { headers })
+      .then(r => r.json())
+      .then((data: any[]) => setCollectionOptions(
+        data.map(c => ({ value: c.id, label: c.title?.ru || c.title?.uz || c.slug || '—' }))
+      ))
+      .catch(() => {});
+  }, []);
+
   const seriesId = isEdit ? (formProps.initialValues as any)?.id : null;
+
+  // Load existing collection links in edit mode
+  useEffect(() => {
+    if (isEdit && seriesId) {
+      const headers: Record<string, string> = { 'X-Admin-Secret': getAdminSecret(), 'Content-Type': 'application/json' };
+      fetch(`${apiUrl}/collections?_limit=200`, { headers })
+        .then(r => r.json())
+        .then(async (allColls: any[]) => {
+          const linked: string[] = [];
+          for (const coll of allColls) {
+            const items: any[] = await fetch(`${apiUrl}/collection-items/${coll.id}`, { headers }).then(r => r.json());
+            if (items.some((it: any) => it.seriesId === seriesId)) linked.push(coll.id);
+          }
+          setSelectedCollectionIds(linked);
+          collectionsReadyRef.current = true;
+        })
+        .catch(() => { collectionsReadyRef.current = true; });
+    }
+  }, [isEdit, seriesId]);
 
   // Fetch seasons + episodes for this series
   const fetchSeasons = useCallback(async () => {
@@ -246,15 +305,31 @@ const SeriesWizard: React.FC<{ isEdit?: boolean }> = ({ isEdit }) => {
               </Form.Item></Col>
               <Col span={8}><Form.Item label="Страна" name="country"><JsonbLangInput placeholder="Узбекистан" /></Form.Item></Col>
             </Row>
-            <Form.Item label="Постер URL" name="posterUrl"><Input /></Form.Item>
-            <Form.Item label="Фон URL" name="backdropUrl"><Input /></Form.Item>
-            <Form.Item label="Трейлер URL" name="trailerUrl"><Input /></Form.Item>
+            <Form.Item label="Постер" name="posterUrl"><FileUpload folder="posters" accept="image/*" /></Form.Item>
+            <Form.Item label="Фон (backdrop)" name="backdropUrl"><FileUpload folder="backdrops" accept="image/*" /></Form.Item>
+            <Form.Item label="Трейлер" name="trailerUrl"><FileUpload folder="trailers" accept="video/*" presigned /></Form.Item>
             <Row gutter={16}>
               <Col span={6}><Form.Item label="Опубликован" name="isPublished" valuePropName="checked"><Switch /></Form.Item></Col>
               <Col span={6}><Form.Item label="Premium" name="isPremium" valuePropName="checked"><Switch /></Form.Item></Col>
               <Col span={6}><Form.Item label="Hero" name="featured" valuePropName="checked"><Switch /></Form.Item></Col>
               <Col span={6}><Form.Item label="Порядок" name="sortOrder"><InputNumber style={{ width: '100%' }} /></Form.Item></Col>
             </Row>
+            <div style={{ marginTop: 16 }}>
+              <Title level={5}>Блоки главной страницы</Title>
+              <Paragraph type="secondary">В каких блоках на главной будет отображаться этот сериал.</Paragraph>
+              <Select
+                mode="multiple"
+                placeholder="Выберите блоки..."
+                value={selectedCollectionIds}
+                onChange={setSelectedCollectionIds}
+                options={collectionOptions}
+                style={{ width: '100%' }}
+                size="large"
+                optionFilterProp="label"
+                showSearch
+                notFoundContent="Нет блоков."
+              />
+            </div>
           </Form>
         )}
 
@@ -412,7 +487,7 @@ const SeriesWizard: React.FC<{ isEdit?: boolean }> = ({ isEdit }) => {
               <Col span={6}><Form.Item label="Качество" name="quality"><Select><Select.Option value="HD">HD</Select.Option><Select.Option value="4K">4K</Select.Option></Select></Form.Item></Col>
               <Col span={6}><Form.Item label="Страна" name="country"><JsonbLangInput placeholder="Узбекистан" /></Form.Item></Col>
             </Row>
-            <Form.Item label="Трейлер URL" name="trailerUrl"><Input placeholder="https://youtube.com/watch?v=..." /></Form.Item>
+            <Form.Item label="Трейлер" name="trailerUrl"><FileUpload folder="trailers" accept="video/*" presigned /></Form.Item>
           </Card>
         </div>
 
@@ -422,11 +497,11 @@ const SeriesWizard: React.FC<{ isEdit?: boolean }> = ({ isEdit }) => {
             <Title level={4}>Обложки</Title>
             <Row gutter={24}>
               <Col span={12}>
-                <Form.Item label={<>Постер <Text type="danger">*</Text></>} name="posterUrl"><Input placeholder="https://example.com/poster.jpg" /></Form.Item>
+                <Form.Item label={<>Постер <Text type="danger">*</Text></>} name="posterUrl"><FileUpload folder="posters" accept="image/*" /></Form.Item>
                 {posterPreview && <div style={{ textAlign: 'center' }}><Image src={posterPreview} width={150} height={220} style={{ objectFit: 'cover', borderRadius: 8 }} /></div>}
               </Col>
               <Col span={12}>
-                <Form.Item label="Фон (backdrop)" name="backdropUrl"><Input placeholder="https://example.com/backdrop.jpg" /></Form.Item>
+                <Form.Item label="Фон (backdrop)" name="backdropUrl"><FileUpload folder="backdrops" accept="image/*" /></Form.Item>
               </Col>
             </Row>
           </Card>
@@ -445,6 +520,22 @@ const SeriesWizard: React.FC<{ isEdit?: boolean }> = ({ isEdit }) => {
               <Col span={8}><Card size="small" style={{ background: '#1a1a2e' }}><Form.Item name="isPremium" valuePropName="checked" style={{ marginBottom: 0 }}><Switch /></Form.Item><Text strong style={{ display: 'block', marginTop: 8 }}>Premium</Text><Text type="secondary" style={{ fontSize: 12 }}>Только для платных подписчиков</Text></Card></Col>
               <Col span={8}><Card size="small" style={{ background: '#1a1a2e' }}><Form.Item name="featured" valuePropName="checked" style={{ marginBottom: 0 }}><Switch /></Form.Item><Text strong style={{ display: 'block', marginTop: 8 }}>Hero-баннер</Text><Text type="secondary" style={{ fontSize: 12 }}>На главной странице</Text></Card></Col>
             </Row>
+            <div style={{ marginTop: 24 }}>
+              <Title level={5}>Блоки главной страницы</Title>
+              <Paragraph type="secondary">В каких блоках на главной будет отображаться этот сериал.</Paragraph>
+              <Select
+                mode="multiple"
+                placeholder="Выберите блоки..."
+                value={selectedCollectionIds}
+                onChange={setSelectedCollectionIds}
+                options={collectionOptions}
+                style={{ width: '100%' }}
+                size="large"
+                optionFilterProp="label"
+                showSearch
+                notFoundContent="Нет блоков."
+              />
+            </div>
           </Card>
         </div>
 

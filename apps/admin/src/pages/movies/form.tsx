@@ -11,6 +11,7 @@ import {
   InfoCircleOutlined,
 } from '@ant-design/icons';
 import { JsonbLangInput } from '../../components/JsonbLangInput';
+import { FileUpload } from '../../components/FileUpload';
 import { getAdminSecret } from '../../providers/dataProvider';
 
 const { Title, Text, Paragraph } = Typography;
@@ -208,7 +209,7 @@ const MovieWizard: React.FC<{ isEdit?: boolean }> = ({ isEdit }) => {
               Вставьте ссылку на YouTube или прямую ссылку на видеофайл
             </Paragraph>
             <Form.Item label="Ссылка на фильм" name="videoUrl" tooltip="YouTube, прямая ссылка или HLS поток">
-              <Input placeholder="https://youtube.com/watch?v=... или https://cdn.example.com/movie.mp4" size="large" />
+              <FileUpload folder="videos" accept="video/*" presigned />
             </Form.Item>
             <Form.Item label="Тип видео" name="videoType" initialValue="url">
               <Select>
@@ -299,7 +300,7 @@ const MovieWizard: React.FC<{ isEdit?: boolean }> = ({ isEdit }) => {
             <Row gutter={24}>
               <Col span={12}>
                 <Form.Item label={<>Постер <Text type="danger">*</Text> <Tooltip title="Вертикальное изображение для карточки фильма"><InfoCircleOutlined /></Tooltip></>} name="posterUrl">
-                  <Input placeholder="https://example.com/poster.jpg" />
+                  <FileUpload folder="posters" accept="image/*" />
                 </Form.Item>
                 {posterPreview && (
                   <div style={{ textAlign: 'center', marginTop: 8 }}>
@@ -310,7 +311,7 @@ const MovieWizard: React.FC<{ isEdit?: boolean }> = ({ isEdit }) => {
               </Col>
               <Col span={12}>
                 <Form.Item label={<>Фон (backdrop) <Tooltip title="Горизонтальное изображение для hero-баннера"><InfoCircleOutlined /></Tooltip></>} name="backdropUrl">
-                  <Input placeholder="https://example.com/backdrop.jpg" />
+                  <FileUpload folder="backdrops" accept="image/*" />
                 </Form.Item>
                 {backdropPreview && (
                   <div style={{ textAlign: 'center', marginTop: 8 }}>

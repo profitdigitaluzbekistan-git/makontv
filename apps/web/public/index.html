@@ -637,6 +637,7 @@ a{color:inherit;text-decoration:none}
   .search-results{padding:0 var(--sp16) var(--sp64)}
 }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.7/dist/hls.min.js"></script>
 </head>
 <body>
 
@@ -703,6 +704,25 @@ a{color:inherit;text-decoration:none}
       <div><p class="about-desc"></p></div>
       <div class="about-dets"></div>
     </div>
+    </div>
+  </div>
+  <!-- Reviews section -->
+  <div class="sec reviews-sec" id="detailReviews">
+    <div class="ctn">
+      <div class="sec-h" style="margin-bottom:var(--sp24)"><h2 class="sec-t">Отзывы</h2></div>
+      <div class="rev-list" id="revList"></div>
+      <div id="revForm" style="margin-top:var(--sp24)">
+        <div style="margin-bottom:12px;font-weight:600">Оставить отзыв</div>
+        <div class="rev-star-input" id="revStars" style="display:flex;gap:4px;margin-bottom:12px;cursor:pointer">
+          <svg data-v="1" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <svg data-v="2" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <svg data-v="3" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <svg data-v="4" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <svg data-v="5" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        </div>
+        <textarea id="revText" placeholder="Напишите ваш отзыв..." style="width:100%;min-height:80px;padding:12px;border-radius:var(--r8);border:1px solid var(--border);background:var(--bg-card);color:var(--t1);font-family:var(--font);font-size:14px;resize:vertical"></textarea>
+        <button onclick="MakonAPI.submitReview()" class="btn btn-p" style="margin-top:12px">Отправить отзыв</button>
+      </div>
     </div>
   </div>
   <section class="sec">
@@ -1088,23 +1108,19 @@ a{color:inherit;text-decoration:none}
       <div>
         <div class="checkout-card" style="margin-bottom:var(--sp24)">
           <div class="checkout-label">Способ оплаты</div>
-          <div class="checkout-cards">
-            <button class="checkout-method active" onclick="this.parentElement.querySelectorAll('.checkout-method').forEach(m=>m.classList.remove('active'));this.classList.add('active')">💳 Карта</button>
-            <button class="checkout-method" onclick="this.parentElement.querySelectorAll('.checkout-method').forEach(m=>m.classList.remove('active'));this.classList.add('active')">📱 Payme</button>
-            <button class="checkout-method" onclick="this.parentElement.querySelectorAll('.checkout-method').forEach(m=>m.classList.remove('active'));this.classList.add('active')">📱 Click</button>
+          <div class="checkout-cards" id="payMethods">
+            <button class="checkout-method active" data-method="payme" onclick="selectPayMethod(this,'payme')">📱 Payme</button>
+            <button class="checkout-method" data-method="click" onclick="selectPayMethod(this,'click')">📱 Click</button>
           </div>
-          <div class="form-group"><label class="form-label">Номер карты</label><input class="form-input" type="text" placeholder="0000 0000 0000 0000" maxlength="19"></div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp16)">
-            <div class="form-group"><label class="form-label">Срок действия</label><input class="form-input" type="text" placeholder="MM/ГГ" maxlength="5"></div>
-            <div class="form-group"><label class="form-label">CVV</label><input class="form-input" type="password" placeholder="•••" maxlength="3"></div>
+          <div style="padding:16px;border-radius:var(--r8);background:rgba(107,241,246,.04);border:1px solid rgba(107,241,246,.1);margin-top:12px">
+            <div style="font-size:14px;color:var(--t2)">После нажатия «Оформить подписку» вы будете перенаправлены на страницу оплаты выбранной платёжной системы.</div>
           </div>
-          <div class="form-group"><label class="form-label">Имя на карте</label><input class="form-input" type="text" placeholder="MIRZO KARIMOV"></div>
         </div>
         <div class="checkout-card">
-          <div class="checkout-label">Промокод</div>
-          <div style="display:flex;gap:var(--sp12)">
-            <input class="form-input" type="text" placeholder="Введите промокод" style="flex:1">
-            <button class="btn btn-s" onclick="showToast('Промокод применён!')">Применить</button>
+          <div class="checkout-label">Период подписки</div>
+          <div class="checkout-cards" id="payPeriod">
+            <button class="checkout-method active" data-period="monthly" onclick="selectPayPeriod(this,'monthly')">Ежемесячно</button>
+            <button class="checkout-method" data-period="annual" onclick="selectPayPeriod(this,'annual')">Годовая (-17%)</button>
           </div>
         </div>
       </div>
@@ -1115,7 +1131,7 @@ a{color:inherit;text-decoration:none}
           <div class="checkout-row"><span>Пробный период</span><span style="color:var(--green)">30 дней бесплатно</span></div>
           <div class="checkout-row total"><span>Итого сегодня</span><span style="color:var(--green)">0 сум</span></div>
           <div class="checkout-trial"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Первые 30 дней бесплатно. Отмена в любое время.</div>
-          <button class="btn btn-p" style="width:100%;margin-top:var(--sp24);height:52px;font-size:16px" onclick="setS('premium');go('home');showToast('Подписка оформлена! 🎉')">Оформить подписку</button>
+          <button class="btn btn-p" style="width:100%;margin-top:var(--sp24);height:52px;font-size:16px" onclick="processCheckout()">Оформить подписку</button>
           <div style="text-align:center;margin-top:var(--sp12);font-size:12px;color:var(--t3)">Нажимая «Оформить», вы соглашаетесь с <a href="#" style="color:var(--accent)">условиями</a></div>
         </div>
       </div>
@@ -1301,23 +1317,19 @@ a{color:inherit;text-decoration:none}
     </div>
     <!-- LOGIN -->
     <div class="auth-pane active" id="authLogin">
-      <div class="form-group"><label class="form-label">Email или телефон</label><input class="form-input" type="text" placeholder="+998 __ ___ __ __"></div>
-      <div class="form-group"><label class="form-label">Пароль</label><input class="form-input" type="password" placeholder="Введите пароль"></div>
+      <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="auth-email" type="email" placeholder="mail@example.com"></div>
+      <div class="form-group"><label class="form-label">Пароль</label><input class="form-input" id="auth-pass" type="password" placeholder="Введите пароль"></div>
       <label class="form-check"><input type="checkbox" checked>Запомнить меня</label>
       <button class="mo-cta" onclick="doLogin()">Войти</button>
-      <div class="form-divider">или</div>
-      <button class="mo-login" style="margin-bottom:var(--sp8)">Войти через Google</button>
       <div style="text-align:center;margin-top:var(--sp16)"><a href="#" style="font-size:13px;color:var(--accent-dim)">Забыли пароль?</a></div>
     </div>
     <!-- REGISTER -->
     <div class="auth-pane" id="authRegister">
-      <div class="form-group"><label class="form-label">Имя</label><input class="form-input" type="text" placeholder="Ваше имя"></div>
-      <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" placeholder="mail@example.com"></div>
-      <div class="form-group"><label class="form-label">Пароль</label><input class="form-input" type="password" placeholder="Минимум 8 символов"><div class="form-hint">Минимум 8 символов, одна цифра</div></div>
+      <div class="form-group"><label class="form-label">Имя</label><input class="form-input" id="auth-name" type="text" placeholder="Ваше имя"></div>
+      <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="auth-email-reg" type="email" placeholder="mail@example.com"></div>
+      <div class="form-group"><label class="form-label">Пароль</label><input class="form-input" id="auth-pass-reg" type="password" placeholder="Минимум 6 символов"></div>
       <label class="form-check"><input type="checkbox">Принимаю условия пользовательского соглашения</label>
       <button class="mo-cta" onclick="doLogin()">Создать аккаунт</button>
-      <div class="form-divider">или</div>
-      <button class="mo-login">Регистрация через Google</button>
     </div>
   </div>
 </div>
@@ -1337,6 +1349,19 @@ a{color:inherit;text-decoration:none}
     <button class="mo-cta" onclick="closeModal();go('plans')">Выбрать тариф</button>
     <button class="mo-login" onclick="closeModal();openAuth()">Уже есть аккаунт? Войти</button>
   </div>
+</div>
+
+<!-- ═══ PWA INSTALL BANNER ═══ -->
+<div id="pwaBanner" style="display:none;position:fixed;bottom:80px;left:16px;right:16px;z-index:9999;background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow:0 8px 32px rgba(0,0,0,.5)">
+  <div style="display:flex;align-items:center;gap:12px">
+    <img src="/icons/icon-192.png" width="48" height="48" style="border-radius:12px" alt="MakonTV">
+    <div style="flex:1">
+      <div style="font-weight:700;font-size:15px">Установить MakonTV</div>
+      <div style="font-size:13px;color:var(--t3);margin-top:2px">Быстрый доступ к фильмам и сериалам</div>
+    </div>
+    <button onclick="dismissPWA()" style="background:none;border:none;color:var(--t3);padding:8px;cursor:pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+  </div>
+  <button id="pwaInstallBtn" onclick="installPWA()" style="width:100%;margin-top:12px;padding:12px;border-radius:var(--r8);background:var(--accent);color:#0A0A0F;border:none;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font)">Установить</button>
 </div>
 
 <!-- ═══ TOAST ═══ -->
@@ -1411,20 +1436,23 @@ function showLibTab(tab){
 function renderLib(){
   const el=document.getElementById('lib-content');
   if(!isAuth){
-    el.innerHTML=`<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg><div class="empty-title">Войдите, чтобы увидеть избранное</div><div class="empty-desc">Сохраняйте фильмы и сериалы, чтобы смотреть позже</div><button class="btn btn-p" onclick="openAuth()">Войти</button></div>`;
+    el.innerHTML='<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg><div class="empty-title">Войдите, чтобы увидеть избранное</div><div class="empty-desc">Сохраняйте фильмы и сериалы, чтобы смотреть позже</div><button class="btn btn-p" onclick="openAuth()">Войти</button></div>';
     return;
   }
-  if(libTab==='fav'){
-    if(favorites.length===0){
-      el.innerHTML=`<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg><div class="empty-title">Пока пусто</div><div class="empty-desc">Добавляйте фильмы и сериалы в избранное, нажимая на закладку</div><button class="btn btn-p" onclick="go('catalog-films')">Перейти в каталог</button></div>`;
-    } else {
-      el.innerHTML='<div class="catalog-grid" id="lib-grid"></div>';
-      rPC('lib-grid',favorites,'');
+  el.innerHTML='<div style="text-align:center;padding:32px;color:var(--t3)">Загрузка...</div>';
+  MakonAPI.loadFavorites().then(function(favs){
+    if(!favs||!favs.length){
+      el.innerHTML='<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg><div class="empty-title">Пока пусто</div><div class="empty-desc">Добавляйте фильмы и сериалы в избранное, нажимая на закладку</div><button class="btn btn-p" onclick="go(\'catalog-films\')">Перейти в каталог</button></div>';
+      return;
     }
-  } else {
+    // Favs contain movie/series data
+    var items=favs.map(function(f){return f.movie||f.series||f;});
     el.innerHTML='<div class="catalog-grid" id="lib-grid"></div>';
-    rPC('lib-grid',M.slice(0,4),'');
-  }
+    if(window.renderCards) renderCards('lib-grid',items,'');
+    else rPC('lib-grid',items.map(function(i){return i.title||'—'}),'');
+  }).catch(function(){
+    el.innerHTML='<div class="empty"><div class="empty-title">Ошибка загрузки</div></div>';
+  });
 }
 
 /* ═══ SEARCH ═══ */
@@ -1449,7 +1477,7 @@ function switchAuth(tab){
   document.getElementById('authLogin').classList.toggle('active',tab==='login');
   document.getElementById('authRegister').classList.toggle('active',tab==='register');
 }
-function doLogin(){closeAuth();setS('premium');openOnboarding();}
+function doLogin(){/* overridden by auth-client.js */}
 
 /* ═══ PAYWALL MODAL ═══ */
 function openModal(){document.getElementById('modal').classList.add('open');document.body.style.overflow='hidden';}
@@ -1562,19 +1590,54 @@ function handleWatch(){
   }
 }
 function handleSave(){
-  if(!isAuth){openModal();return;}
-  const b=document.getElementById('ctaSv');
-  b.querySelector('svg').setAttribute('fill','currentColor');
-  b.style.color='var(--gold)';b.style.borderColor='rgba(251,191,36,.3)';b.style.background='rgba(251,191,36,.1)';
-  const t=window._currentMovie&&window._currentMovie.title||'';
-  if(t&&!favorites.includes(t))favorites.push(t);
+  if(!isAuth){openAuth();return;}
+  var m=window._currentMovie,s=window._currentSeries;
+  if(m) MakonAPI.addFavorite(m.id,null);
+  else if(s) MakonAPI.addFavorite(null,s.id);
+  var b=document.getElementById('ctaSv');
+  if(b){b.querySelector('svg').setAttribute('fill','currentColor');b.style.color='var(--gold)';b.style.borderColor='rgba(251,191,36,.3)';b.style.background='rgba(251,191,36,.1)';}
 }
-function handleSaveGlobal(){if(!isAuth)openAuth();else{const t=window._currentHeroSlug||'';if(t&&!favorites.includes(t))favorites.push(t);}}
+function handleSaveGlobal(){
+  if(!isAuth){openAuth();return;}
+  // Hero banner favorite — find current hero item
+  var items=window._heroItems;var idx=window._heroIndex||0;
+  if(items&&items[idx]){
+    var item=items[idx];
+    if(item.type==='series') MakonAPI.addFavorite(null,item.id);
+    else MakonAPI.addFavorite(item.id,null);
+  }
+}
 function toggleDesc(){
   const d=document.getElementById('dDesc'),b=document.getElementById('dMore');
   d.classList.toggle('clamp');
   b.innerHTML=d.classList.contains('clamp')?'Показать больше <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>':'Свернуть <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>';
   b.classList.toggle('exp',!d.classList.contains('clamp'));
+}
+
+/* ═══ CHECKOUT / PAYMENT ═══ */
+var _payMethod='payme';
+var _payPeriod='monthly';
+function selectPayMethod(el,method){_payMethod=method;el.parentElement.querySelectorAll('.checkout-method').forEach(function(m){m.classList.remove('active')});el.classList.add('active');}
+function selectPayPeriod(el,period){_payPeriod=period;el.parentElement.querySelectorAll('.checkout-method').forEach(function(m){m.classList.remove('active')});el.classList.add('active');}
+function processCheckout(){
+  if(!isAuth){openAuth();return;}
+  if(!MakonAPI.checkout){showToast('Ошибка: модуль оплаты не загружен');return;}
+  MakonAPI.checkout('premium',_payPeriod).then(function(data){
+    if(!data)return;
+    if(data.status==='activated'){
+      showToast(data.message||'Подписка активирована!');
+      go('home');return;
+    }
+    if(data.paymentUrls){
+      var url=data.paymentUrls[_payMethod];
+      if(url){
+        showToast('Переход к оплате...');
+        window.open(url,'_blank');
+      } else {
+        showToast('Выберите способ оплаты');
+      }
+    }
+  }).catch(function(){showToast('Ошибка при оформлении');});
 }
 
 /* ═══ HERO SLIDER ═══ */
@@ -1758,6 +1821,67 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (!refreshing) { refreshing = true; window.location.reload(); }
   });
+}
+
+// ═══ PWA INSTALL PROMPT ═══
+var _deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', function(e) {
+  e.preventDefault();
+  _deferredPrompt = e;
+  // Show banner after 3 seconds if not dismissed before
+  if (!localStorage.getItem('pwa_dismissed')) {
+    setTimeout(function() {
+      var banner = document.getElementById('pwaBanner');
+      if (banner) banner.style.display = 'block';
+    }, 3000);
+  }
+});
+function installPWA() {
+  if (!_deferredPrompt) return;
+  _deferredPrompt.prompt();
+  _deferredPrompt.userChoice.then(function(choice) {
+    if (choice.outcome === 'accepted') showToast('Приложение установлено!');
+    document.getElementById('pwaBanner').style.display = 'none';
+    _deferredPrompt = null;
+  });
+}
+function dismissPWA() {
+  document.getElementById('pwaBanner').style.display = 'none';
+  localStorage.setItem('pwa_dismissed', '1');
+}
+
+// ═══ SEO META TAGS ═══
+function updateMeta(title, description, image) {
+  document.title = title ? title + ' — MakonTV' : 'MakonTV — Фильмы и сериалы онлайн';
+  var metaDesc = document.querySelector('meta[name="description"]');
+  if (!metaDesc) { metaDesc = document.createElement('meta'); metaDesc.name = 'description'; document.head.appendChild(metaDesc); }
+  metaDesc.content = description || 'Смотрите лучшие фильмы и сериалы на MakonTV';
+
+  var ogTitle = document.querySelector('meta[property="og:title"]');
+  if (!ogTitle) { ogTitle = document.createElement('meta'); ogTitle.setAttribute('property', 'og:title'); document.head.appendChild(ogTitle); }
+  ogTitle.content = title || 'MakonTV';
+
+  var ogDesc = document.querySelector('meta[property="og:description"]');
+  if (!ogDesc) { ogDesc = document.createElement('meta'); ogDesc.setAttribute('property', 'og:description'); document.head.appendChild(ogDesc); }
+  ogDesc.content = description || '';
+
+  var ogImg = document.querySelector('meta[property="og:image"]');
+  if (!ogImg) { ogImg = document.createElement('meta'); ogImg.setAttribute('property', 'og:image'); document.head.appendChild(ogImg); }
+  ogImg.content = image || '/icons/icon-512.png';
+
+  var ogUrl = document.querySelector('meta[property="og:url"]');
+  if (!ogUrl) { ogUrl = document.createElement('meta'); ogUrl.setAttribute('property', 'og:url'); document.head.appendChild(ogUrl); }
+  ogUrl.content = location.href;
+}
+// Reset meta when going to home
+var _origGo = window.go;
+var _goWrapped = false;
+if (_origGo && !_goWrapped) {
+  _goWrapped = true;
+  window.go = function(page) {
+    _origGo(page);
+    if (page === 'home') updateMeta('', '', '');
+  };
 }
 </script>
 <script src="i18n.js"></script>

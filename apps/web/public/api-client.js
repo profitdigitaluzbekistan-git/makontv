@@ -460,6 +460,9 @@
 
       // Store for video player
       window._currentMovie = movie;
+      window._currentSeries = null;
+      _loadReviews();
+      if (window.updateMeta) updateMeta(movie.title, movie.shortDesc || movie.description, movie.posterUrl || movie.backdropUrl);
     }).catch(err => {
       console.warn('Failed to load movie detail:', err.message);
     });
@@ -551,6 +554,8 @@
         renderCards('car-ser-rec', simItems, '');
       }
 
+      _loadReviews();
+      if (window.updateMeta) updateMeta(show.title, show.shortDesc || show.description, show.posterUrl || show.backdropUrl);
     }).catch(err => {
       console.warn('Failed to load series detail:', err.message);
     });
@@ -799,6 +804,173 @@
     CURRENT_USER_ID = null;
     localStorage.removeItem('makontv_user_id');
   };
+
+  // ═══════════════════════════
+  // 12. REVIEWS
+  // ═══════════════════════════
+  var _reviewRating = 0;
+
+  // Star rating interaction
+  document.addEventListener('DOMContentLoaded', function() {
+    var starsContainer = document.getElementById('revStars');
+    if (starsContainer) {
+      starsContainer.querySelectorAll('svg').forEach(function(star) {
+        star.addEventListener('click', function() {
+          _reviewRating = parseInt(star.getAttribute('data-v'));
+          _updateStars();
+        });
+        star.addEventListener('mouseenter', function() {
+          var v = parseInt(star.getAttribute('data-v'));
+          starsContainer.querySelectorAll('svg').forEach(function(s) {
+            s.style.fill = parseInt(s.getAttribute('data-v')) <= v ? 'var(--gold)' : 'none';
+          });
+        });
+      });
+      starsContainer.addEventListener('mouseleave', function() { _updateStars(); });
+    }
+  });
+
+  function _updateStars() {
+    var starsContainer = document.getElementById('revStars');
+    if (!starsContainer) return;
+    starsContainer.querySelectorAll('svg').forEach(function(s) {
+      s.style.fill = parseInt(s.getAttribute('data-v')) <= _reviewRating ? 'var(--gold)' : 'none';
+    });
+  }
+
+  MakonAPI.submitReview = function() {
+    var text = document.getElementById('revText');
+    if (!_reviewRating) { showToast('Выберите оценку'); return; }
+    if (!text || !text.value.trim()) { showToast('Напишите отзыв'); return; }
+
+    var movie = window._currentMovie;
+    var series = window._currentSeries;
+    var body = {
+      rating: _reviewRating,
+      text: text.value.trim(),
+      userName: CURRENT_USER_ID ? undefined : 'Гость',
+    };
+    if (movie) body.movieId = movie.id;
+    else if (series) body.seriesId = series.id;
+
+    var userId = CURRENT_USER_ID || 'guest';
+    apiPost('/api/reviews', body).then(function() {
+      showToast('Отзыв отправлен!');
+      text.value = '';
+      _reviewRating = 0;
+      _updateStars();
+      // Reload reviews
+      _loadReviews();
+    }).catch(function() {
+      showToast('Ошибка при отправке');
+    });
+  };
+
+  function _loadReviews() {
+    var movie = window._currentMovie;
+    var series = window._currentSeries;
+    var id = movie ? movie.id : (series ? series.id : null);
+    var type = movie ? 'movie' : 'series';
+    if (!id) return;
+
+    api('/api/reviews?type=' + type + '&id=' + id).then(function(reviews) {
+      _renderReviews(reviews);
+    }).catch(function() {});
+  }
+
+  function _renderReviews(reviews) {
+    var list = document.getElementById('revList');
+    if (!list) return;
+    if (!reviews || !reviews.length) {
+      list.innerHTML = '<div style="color:var(--t3);font-size:14px">Пока нет отзывов. Будьте первым!</div>';
+      return;
+    }
+    list.innerHTML = reviews.map(function(r) {
+      var stars = '';
+      for (var i = 1; i <= 5; i++) {
+        stars += '<svg width="14" height="14" viewBox="0 0 24 24" fill="' + (i <= r.rating ? 'var(--gold)' : 'none') + '" stroke="var(--gold)" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+      }
+      var time = r.createdAt ? formatTimeAgo(r.createdAt) : '';
+      var name = r.userName || 'Пользователь';
+      return '<div class="rev-card">' +
+        '<div class="rev-card-top">' +
+          '<div class="rev-card-av">' + name[0].toUpperCase() + '</div>' +
+          '<div><div class="rev-card-name">' + name + '</div><div class="rev-card-date">' + time + '</div></div>' +
+          '<div style="margin-left:auto;display:flex;gap:2px">' + stars + '</div>' +
+        '</div>' +
+        '<div class="rev-card-text">' + r.text + '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  // ═══════════════════════════
+  // 13. VIDEO PLAYER
+  // ═══════════════════════════
+  MakonAPI.initPlayer = function(containerId, url, opts) {
+    opts = opts || {};
+    var container = document.getElementById(containerId);
+    if (!container) return;
+
+    // Detect URL type
+    var isYoutube = /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]+)/.exec(url);
+    var isHLS = /\.m3u8(\?|$)/i.test(url);
+
+    if (isYoutube) {
+      // YouTube embed
+      var videoId = isYoutube[1];
+      container.innerHTML = '<div style="position:relative;width:100%;height:100%;display:flex;flex-direction:column;background:#000">' +
+        (opts.title ? '<div style="position:absolute;top:0;left:0;right:0;padding:16px 60px;background:linear-gradient(180deg,rgba(0,0,0,.8),transparent);z-index:10;color:#fff;font-size:16px;font-weight:600">' + opts.title + '</div>' : '') +
+        '<iframe src="https://www.youtube.com/embed/' + videoId + '?autoplay=1&rel=0&modestbranding=1" style="flex:1;border:none;width:100%;height:100%" allow="autoplay;encrypted-media;fullscreen" allowfullscreen></iframe>' +
+        '</div>';
+    } else if (isHLS) {
+      // HLS via hls.js
+      container.innerHTML = '<div style="position:relative;width:100%;height:100%;display:flex;flex-direction:column;background:#000">' +
+        (opts.title ? '<div class="player-title" style="position:absolute;top:0;left:0;right:0;padding:16px 60px;background:linear-gradient(180deg,rgba(0,0,0,.8),transparent);z-index:10;color:#fff;font-size:16px;font-weight:600">' + opts.title + '</div>' : '') +
+        '<video id="hlsVideo" style="flex:1;width:100%;height:100%;background:#000" controls autoplay playsinline></video>' +
+        '</div>';
+      var video = document.getElementById('hlsVideo');
+      if (window.Hls && Hls.isSupported()) {
+        var hls = new Hls();
+        hls.loadSource(url);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, function() { video.play(); });
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = url;
+        video.play();
+      }
+      _setupProgressTracking(video, opts);
+    } else {
+      // Direct MP4/video URL
+      container.innerHTML = '<div style="position:relative;width:100%;height:100%;display:flex;flex-direction:column;background:#000">' +
+        (opts.title ? '<div class="player-title" style="position:absolute;top:0;left:0;right:0;padding:16px 60px;background:linear-gradient(180deg,rgba(0,0,0,.8),transparent);z-index:10;color:#fff;font-size:16px;font-weight:600;pointer-events:none">' + opts.title + '</div>' : '') +
+        '<video id="nativeVideo" style="flex:1;width:100%;height:100%;background:#000" controls autoplay playsinline>' +
+        '<source src="' + url + '" type="video/mp4">' +
+        '</video>' +
+        '</div>';
+      var vid = document.getElementById('nativeVideo');
+      vid.play().catch(function() {});
+      _setupProgressTracking(vid, opts);
+    }
+  };
+
+  function _setupProgressTracking(videoEl, opts) {
+    if (!videoEl || !CURRENT_USER_ID || !opts.movieId) return;
+    var lastSaved = 0;
+    videoEl.addEventListener('timeupdate', function() {
+      var now = Math.floor(Date.now() / 1000);
+      if (now - lastSaved < 15) return; // save every 15 seconds
+      lastSaved = now;
+      var progress = Math.floor(videoEl.currentTime);
+      var duration = Math.floor(videoEl.duration) || 0;
+      if (progress > 5) {
+        apiPost('/api/users/' + CURRENT_USER_ID + '/history', {
+          movieId: opts.movieId,
+          progressSec: progress,
+          durationSec: duration,
+        }).catch(function() {});
+      }
+    });
+  }
 
   // ═══════════════════════════
   // AUTO-INIT
