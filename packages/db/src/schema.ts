@@ -211,6 +211,7 @@ export const users = pgTable('users', {
   subscriptionExpiresAt: timestamp('subscription_expires_at', { withTimezone: true }),
   referralCode: varchar('referral_code', { length: 20 }).unique(),
   referredBy: uuid('referred_by'),
+  googleId: varchar('google_id', { length: 255 }),
   role: varchar('role', { length: 20 }).default('user'),
   isBlocked: boolean('is_blocked').default(false),
   language: varchar('language', { length: 5 }).default('ru'),

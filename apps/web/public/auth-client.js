@@ -142,6 +142,83 @@
     }
   };
 
+  // ═══ GOOGLE LOGIN ═══
+
+  MakonAPI.loginWithGoogle = async function(googleToken) {
+    try {
+      const res = await fetch(`${API}/api/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: googleToken }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.error || 'Ошибка входа через Google');
+        return null;
+      }
+
+      setTokens(data.accessToken, data.refreshToken);
+      setUser(data.user);
+      MakonAPI.setUser(data.user.id);
+      onAuthChange(true);
+      showToast('Добро пожаловать!');
+      return data.user;
+    } catch (err) {
+      showToast('Ошибка сети');
+      return null;
+    }
+  };
+
+  window.doGoogleLogin = function() {
+    const clientId = window.GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      showToast('Google Sign-In не настроен');
+      return;
+    }
+
+    if (typeof google === 'undefined' || !google.accounts) {
+      showToast('Google Sign-In загружается, попробуйте ещё раз');
+      return;
+    }
+
+    google.accounts.id.initialize({
+      client_id: clientId,
+      callback: async (response) => {
+        if (response.credential) {
+          const user = await MakonAPI.loginWithGoogle(response.credential);
+          if (user) {
+            closeAuth();
+          }
+        }
+      },
+    });
+
+    google.accounts.id.prompt((notification) => {
+      if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+        // One Tap unavailable — render hidden Google button and auto-click it
+        let container = document.getElementById('g_id_signin_tmp');
+        if (!container) {
+          container = document.createElement('div');
+          container.id = 'g_id_signin_tmp';
+          container.style.cssText = 'position:fixed;top:-9999px;left:-9999px';
+          document.body.appendChild(container);
+        }
+        google.accounts.id.renderButton(container, {
+          type: 'standard',
+          theme: 'outline',
+          size: 'large',
+          text: 'signin_with',
+        });
+        // Click the rendered iframe/button
+        setTimeout(() => {
+          const btn = container.querySelector('[role="button"], iframe');
+          if (btn) btn.click();
+        }, 100);
+      }
+    });
+  };
+
   // ═══ LOGOUT ═══
 
   MakonAPI.logout = function() {
@@ -238,7 +315,7 @@
   function updateNavForAuth(loggedIn) {
     // Profile nav item
     const profileLink = document.querySelector('.nav-link[data-page="profile"]');
-    const authBtn = document.querySelector('.auth-trigger');
+    const authBtn = document.getElementById('navAuth');
 
     if (loggedIn) {
       const user = getUser();

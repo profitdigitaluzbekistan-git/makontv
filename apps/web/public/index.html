@@ -10,6 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="MakonTV">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <title>MakonTV</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -27,7 +28,7 @@
   --ease:220ms cubic-bezier(.4,0,.2,1);
   --font:'Manrope',-apple-system,sans-serif;
   --fw4:400;--fw5:500;--fw6:600;--fw7:700;--fw8:800;
-  --pw:180px;--ph:270px;--pg:16px;
+  --pw:210px;--ph:315px;--pg:20px;
   --cw-w:340px;--cw-ih:192px;
 }
 html{scroll-behavior:smooth}
@@ -87,7 +88,7 @@ a{color:inherit;text-decoration:none}
 
 /* ═══ CAROUSEL (shared) ═══ */
 .car-w{position:relative}
-.car{display:flex;gap:var(--pg);overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding:var(--sp4) 0}
+.car{display:flex;gap:var(--pg);overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding:10px 0 var(--sp4)}
 .car::-webkit-scrollbar{display:none}
 .car>*{scroll-snap-align:start;flex-shrink:0}
 .arr{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;background:rgba(10,10,15,.9);border:1px solid var(--border);color:var(--t1);cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:5;opacity:0;transition:all var(--ease);backdrop-filter:blur(8px)}
@@ -97,18 +98,20 @@ a{color:inherit;text-decoration:none}
 .arr.l{left:var(--sp16)}.arr.r{right:var(--sp16)}
 
 /* ═══ POSTER CARD (shared) ═══ */
-.pc{width:var(--pw);cursor:pointer;transition:transform var(--ease)}
-.pc:hover{transform:translateY(-4px)}
-.pc-img{width:var(--pw);height:var(--ph);border-radius:var(--r12);overflow:hidden;position:relative;background:var(--bg-card)}
-.pc-img::after{content:'';position:absolute;inset:0;border-radius:var(--r12);border:1px solid rgba(255,255,255,.06);pointer-events:none}
-.pc:hover .pc-img::after{border-color:rgba(107,241,246,.35);box-shadow:0 8px 32px rgba(0,0,0,.5),0 0 0 1px rgba(107,241,246,.15)}
+.pc{width:var(--pw);cursor:pointer;transition:transform .3s ease,box-shadow .3s ease}
+.pc:hover{transform:translateY(-8px)}
+.pc-img{width:var(--pw);height:var(--ph);border-radius:12px;overflow:hidden;position:relative;background:var(--bg-card);transition:box-shadow .3s ease}
+.pc-img img{width:100%;height:100%;object-fit:cover;border-radius:12px}
+.pc-img::after{content:'';position:absolute;inset:0;border-radius:12px;border:1px solid rgba(255,255,255,.06);pointer-events:none}
+.pc:hover .pc-img::after{border-color:rgba(107,241,246,.35)}
+.pc:hover .pc-img{box-shadow:0 12px 30px rgba(0,0,0,.5)}
 .pc-poster{width:100%;height:100%}
-.pc-ov{position:absolute;inset:0;border-radius:var(--r12);background:rgba(10,10,15,.55);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity var(--ease)}
+.pc-ov{position:absolute;inset:0;border-radius:12px;background:rgba(10,10,15,.55);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity var(--ease)}
 .pc:hover .pc-ov{opacity:1}
-.play-c{width:48px;height:48px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#0A0A0F;box-shadow:0 0 24px rgba(107,241,246,.25)}
-.play-c svg{width:20px;height:20px;margin-left:2px}
-.pc-info{height:40px;padding-top:var(--sp8)}
-.pc-title{font-size:15px;font-weight:var(--fw6);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.play-c{width:52px;height:52px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#0A0A0F;box-shadow:0 0 24px rgba(107,241,246,.25)}
+.play-c svg{width:22px;height:22px;margin-left:2px}
+.pc-info{padding-top:10px}
+.pc-title{font-size:15px;font-weight:var(--fw6);line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis;white-space:normal}
 .pc-badge{position:absolute;top:var(--sp8);left:var(--sp8);z-index:2;padding:3px var(--sp8);border-radius:4px;font-size:11px;font-weight:var(--fw7);text-transform:uppercase;letter-spacing:.06em;line-height:1}
 .bdg-top{background:var(--accent);color:#0A0A0F}.bdg-new{background:var(--green);color:#0A0A0F}.bdg-exc{background:linear-gradient(135deg,#F59E0B,#EF4444);color:#fff}
 
@@ -265,6 +268,11 @@ a{color:inherit;text-decoration:none}
 .form-input::placeholder{color:var(--t3)}
 .form-hint{font-size:12px;color:var(--t3);margin-top:var(--sp4)}
 .form-check{display:flex;align-items:center;gap:var(--sp8);font-size:13px;color:var(--t2);margin-bottom:var(--sp24);cursor:pointer}
+.google-btn{width:100%;height:48px;border-radius:var(--r8);background:#fff;color:#1f1f1f;font-size:15px;font-weight:var(--fw6);border:none;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:var(--sp12);transition:all var(--ease)}
+.google-btn:hover{background:#f2f2f2;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.google-btn svg{width:20px;height:20px;flex-shrink:0}
+.auth-divider{display:flex;align-items:center;gap:var(--sp16);margin:var(--sp24) 0;color:var(--t3);font-size:13px}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border)}
 .form-check input{width:18px;height:18px;accent-color:var(--accent)}
 .form-divider{display:flex;align-items:center;gap:var(--sp12);margin:var(--sp24) 0;color:var(--t3);font-size:12px}
 .form-divider::before,.form-divider::after{content:'';flex:1;height:1px;background:var(--border)}
@@ -611,15 +619,15 @@ a{color:inherit;text-decoration:none}
 .page.visible{display:block}
 
 /* ═══ RESPONSIVE ═══ */
-@media(max-width:1439px){:root{--pw:164px;--ph:246px;--cw-w:300px;--cw-ih:170px}}
+@media(max-width:1439px){:root{--pw:190px;--ph:285px;--cw-w:300px;--cw-ih:170px}}
 @media(max-width:1023px){
-  :root{--pad:24px;--pw:148px;--ph:222px;--cw-w:280px;--cw-ih:158px}
+  :root{--pad:24px;--pw:170px;--ph:255px;--cw-w:280px;--cw-ih:158px}
   .h-title{font-size:40px}.d-title{font-size:32px}.about-in{grid-template-columns:1fr}.tr-c{width:280px}.tr-img{width:280px;height:158px}
   .plans-grid{grid-template-columns:1fr}
   .prof-card{flex-direction:column;text-align:center}
 }
 @media(max-width:767px){
-  :root{--pad:16px;--pw:128px;--ph:192px;--pg:12px;--cw-w:260px;--cw-ih:146px}
+  :root{--pad:16px;--pw:140px;--ph:210px;--pg:12px;--cw-w:260px;--cw-ih:146px}
   .nav{height:52px}.nav-in{padding:0 var(--sp16)}.nav-links,.nav-lang{display:none}.nav-logo{height:28px}
   .hero{height:480px}.hero-ct-in{padding-left:var(--sp16);padding-right:var(--sp16)}.h-title{font-size:32px}.h-desc{-webkit-line-clamp:2;font-size:14px}.h-act .btn-g{display:none}.btn-p,.btn-s{height:44px;font-size:14px}.hero-arr{display:none}
   .m-chips{display:flex}.bn{display:flex}
@@ -1311,6 +1319,11 @@ a{color:inherit;text-decoration:none}
 <div class="mo" id="authModal" onclick="closeAuth(event)">
   <div class="mo-box" style="padding-top:var(--sp32)">
     <button class="mo-x" onclick="closeAuth()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+    <button class="google-btn" onclick="doGoogleLogin()">
+      <svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A10.96 10.96 0 0 0 1 12c0 1.77.42 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+      Войти через Google
+    </button>
+    <div class="auth-divider">или</div>
     <div class="auth-tabs">
       <button class="auth-tab active" onclick="switchAuth('login')">Вход</button>
       <button class="auth-tab" onclick="switchAuth('register')">Регистрация</button>
@@ -1800,6 +1813,7 @@ window.addEventListener('hashchange',function(){navigateFromHash();});
 <script>
 // API Config — change this when deploying
 window.MAKONTV_API_URL = 'https://makontv-api.vercel.app'; // Production API
+window.GOOGLE_CLIENT_ID = '507388949068-jaocfkgv0f797ujssacqopqdidiu34ao.apps.googleusercontent.com';
 </script>
 <script src="api-client.js"></script>
 <script src="user-actions.js"></script>

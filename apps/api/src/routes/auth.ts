@@ -148,6 +148,105 @@ auth.post('/login', async (c) => {
   });
 });
 
+// ═══ GOOGLE AUTH ═══
+auth.post('/google', async (c) => {
+  const db = getDb();
+  const body = await c.req.json<{ token: string }>();
+
+  if (!body.token) {
+    return c.json({ error: 'Google token обязателен' }, 400);
+  }
+
+  // Verify Google ID token via tokeninfo endpoint
+  const GOOGLE_CLIENT_ID = (c.env as any)?.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID;
+  if (!GOOGLE_CLIENT_ID) {
+    return c.json({ error: 'Google auth не настроен' }, 500);
+  }
+
+  let googlePayload: { sub: string; email: string; name?: string; picture?: string; aud?: string };
+  try {
+    const verifyRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(body.token)}`);
+    if (!verifyRes.ok) {
+      return c.json({ error: 'Недействительный Google токен' }, 401);
+    }
+    googlePayload = await verifyRes.json() as any;
+  } catch {
+    return c.json({ error: 'Ошибка верификации Google токена' }, 500);
+  }
+
+  // Verify audience matches our client ID
+  if (googlePayload.aud !== GOOGLE_CLIENT_ID) {
+    return c.json({ error: 'Недействительный Google токен (aud mismatch)' }, 401);
+  }
+
+  if (!googlePayload.email || !googlePayload.sub) {
+    return c.json({ error: 'Google токен не содержит email' }, 400);
+  }
+
+  const googleId = googlePayload.sub;
+  const email = googlePayload.email.toLowerCase();
+
+  try {
+    // 1. Try to find user by google_id
+    let [user] = await db.select().from(users).where(eq(users.googleId, googleId));
+
+    if (!user) {
+      // 2. Try to find by email
+      [user] = await db.select().from(users).where(eq(users.email, email));
+
+      if (user) {
+        // Link Google to existing account
+        await db.update(users).set({ googleId }).where(eq(users.id, user.id));
+      } else {
+        // 3. Create new user
+        const [freePlan] = await db.select().from(plans).where(eq(plans.slug, 'basic'));
+        const displayName = googlePayload.name || email.split('@')[0];
+
+        [user] = await db.insert(users).values({
+          email,
+          googleId,
+          name: { ru: displayName, uz: displayName },
+          avatarUrl: googlePayload.picture || null,
+          avatarLetter: displayName[0].toUpperCase(),
+          language: 'ru',
+          role: 'user',
+          subscriptionStatus: 'guest',
+          planId: freePlan?.id || null,
+          referralCode: generateReferralCode(),
+        }).returning();
+
+        // Create default profile
+        await db.insert(userProfiles).values({
+          userId: user.id,
+          name: displayName,
+          isDefault: true,
+        });
+      }
+    }
+
+    if (user.isBlocked) {
+      return c.json({ error: 'Аккаунт заблокирован' }, 403);
+    }
+
+    const tokens = await generateTokenPair(user.id, user.email!, user.role!);
+
+    return c.json({
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        subscriptionStatus: user.subscriptionStatus,
+        referralCode: user.referralCode,
+        language: user.language,
+      },
+      ...tokens,
+    });
+  } catch (err: any) {
+    return c.json({ error: 'Ошибка сервера: ' + (err?.message || String(err)) }, 500);
+  }
+});
+
 // ═══ REFRESH ═══
 auth.post('/refresh', async (c) => {
   const db = getDb();
