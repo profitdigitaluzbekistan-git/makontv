@@ -98,7 +98,7 @@ async function generateTokenPair(userId: string, email: string, role: string) {
 
 async function verifyAccessToken(token: string): Promise<TokenPayload | null> {
   try {
-    const payload = await verify(token, JWT_SECRET) as TokenPayload;
+    const payload = await verify(token, JWT_SECRET, 'HS256') as TokenPayload;
     if (payload.type !== 'access') return null;
     return payload;
   } catch {
@@ -108,7 +108,7 @@ async function verifyAccessToken(token: string): Promise<TokenPayload | null> {
 
 async function verifyRefreshToken(token: string): Promise<TokenPayload | null> {
   try {
-    const payload = await verify(token, JWT_REFRESH_SECRET) as TokenPayload;
+    const payload = await verify(token, JWT_REFRESH_SECRET, 'HS256') as TokenPayload;
     if (payload.type !== 'refresh') return null;
     return payload;
   } catch {

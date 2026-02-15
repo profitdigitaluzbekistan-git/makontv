@@ -78,51 +78,73 @@
   const _origBuildHome = window.buildHome;
 
   window.buildHome = function() {
-    // Show skeleton immediately
-    _origBuildHome();
+    // Show skeleton loading state
+    var el = document.getElementById('home-main');
+    if (el) {
+      el.innerHTML = mkSec('Популярное', 'hc-skel1') + mkSec('Новинки', 'hc-skel2') + mkSec('Рекомендации', 'hc-skel3');
+      rSkel('hc-skel1', 6);
+      rSkel('hc-skel2', 6);
+      rSkel('hc-skel3', 6);
+    }
 
-    api('/api/home').then(data => {
-      const el = document.getElementById('home-main');
+    // Race API call against 10s timeout
+    var homeAbort = new AbortController();
+    var homeTimer = setTimeout(function() { homeAbort.abort(); }, 10000);
+    fetch(API_BASE + '/api/home?lang=' + LANG(), { signal: homeAbort.signal })
+      .then(function(r) { clearTimeout(homeTimer); if (!r.ok) throw new Error(r.statusText); return r.json(); })
+      .then(data => {
+      el = document.getElementById('home-main');
       if (!el) return;
 
-      // Build sections from API collections
-      let html = '';
-
-      // Continue watching (from user history if logged in)
-      if (CURRENT_USER_ID) {
-        html += mkSec('Продолжить просмотр', 'hc-cw');
-      }
-
-      // Collections from API — skip empty ones
+      // Build sections from API collections — skip empty ones
       var visibleCollections = (data.collections || []).filter(coll => coll.items && coll.items.length > 0);
+      var html = '';
       visibleCollections.forEach(coll => {
-        const carId = 'hc-' + coll.slug.replace(/[^a-z0-9]/g, '');
+        var carId = 'hc-' + coll.slug.replace(/[^a-z0-9]/g, '');
         html += mkSec(coll.title, carId, coll.slug);
       });
 
+      if (!html) {
+        el.innerHTML = '<div class="empty" style="padding:48px 0;text-align:center"><div class="empty-title" style="color:var(--t2)">Контент скоро появится</div></div>';
+        return;
+      }
       el.innerHTML = html;
 
-      // Render continue watching
-      if (CURRENT_USER_ID) {
-        api(`/api/users/${CURRENT_USER_ID}/history?continue=true`).then(history => {
-          renderContinueWatching('hc-cw', history);
-        }).catch(() => rCW('hc-cw'));
-      }
-
-      // Render collection items
-      visibleCollections.forEach((coll, idx) => {
-        const carId = 'hc-' + coll.slug.replace(/[^a-z0-9]/g, '');
-        const badge = coll.slug === 'trending' ? 'top' : coll.slug === 'new' ? 'new' : '';
+      // Render collection items synchronously
+      visibleCollections.forEach(coll => {
+        var carId = 'hc-' + coll.slug.replace(/[^a-z0-9]/g, '');
+        var badge = coll.slug === 'trending' ? 'top' : coll.slug === 'new' ? 'new' : '';
         renderCards(carId, coll.items, badge);
       });
 
-      // Hero slider — build slides and start auto-play
+      // Continue watching — only show if user has actual history
+      if (CURRENT_USER_ID) {
+        api('/api/users/' + CURRENT_USER_ID + '/history?continue=true').then(function(history) {
+          if (history && history.length > 0) {
+            // Prepend continue watching section before first collection
+            var cwSection = document.createElement('div');
+            cwSection.id = 'cw-section';
+            cwSection.innerHTML = mkSec('Продолжить просмотр', 'hc-cw');
+            el.insertBefore(cwSection, el.firstChild);
+            renderContinueWatching('hc-cw', history);
+          }
+        }).catch(function() { /* No history — don't show section */ });
+      }
+
+      // Hero slider
       if (data.hero && data.hero.length > 0) {
         buildHeroSlider(data.hero);
       }
-    }).catch(err => {
-      console.warn('API unavailable, using mock data:', err.message);
-      _origBuildHome();
+    }).catch(function(err) {
+      console.error('Home API error:', err);
+      el = document.getElementById('home-main');
+      if (el) {
+        el.innerHTML = '<div class="empty" style="padding:48px 0;text-align:center">' +
+          '<div class="empty-title" style="color:var(--t2)">Не удалось загрузить</div>' +
+          '<div class="empty-desc" style="color:var(--t3);margin:8px 0 16px">Проверьте подключение к интернету</div>' +
+          '<button class="btn btn-p" onclick="buildHome()">Повторить</button>' +
+          '</div>';
+      }
     });
   };
 
@@ -233,7 +255,12 @@
 
   function renderContinueWatching(containerId, items) {
     const el = document.getElementById(containerId);
-    if (!el || !items.length) { rCW(containerId); return; }
+    if (!el || !items || !items.length) {
+      // Hide the entire continue watching section instead of showing permanent skeletons
+      var cwSection = document.getElementById('cw-section');
+      if (cwSection) cwSection.remove();
+      return;
+    }
 
     el.innerHTML = items.map((it, i) => {
       const pct = parseFloat(it.progressPct) || 0;

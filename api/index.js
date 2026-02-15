@@ -45036,7 +45036,7 @@ async function generateTokenPair(userId, email, role) {
 }
 async function verifyAccessToken(token) {
   try {
-    const payload2 = await verify2(token, JWT_SECRET);
+    const payload2 = await verify2(token, JWT_SECRET, "HS256");
     if (payload2.type !== "access") return null;
     return payload2;
   } catch {
@@ -45045,7 +45045,7 @@ async function verifyAccessToken(token) {
 }
 async function verifyRefreshToken(token) {
   try {
-    const payload2 = await verify2(token, JWT_REFRESH_SECRET);
+    const payload2 = await verify2(token, JWT_REFRESH_SECRET, "HS256");
     if (payload2.type !== "refresh") return null;
     return payload2;
   } catch {

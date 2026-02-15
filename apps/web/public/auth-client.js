@@ -55,12 +55,21 @@
     const res = await fetch(`${API}${path}`, { ...opts, headers });
 
     // Auto-refresh on 401
-    if (res.status === 401 && getRefreshToken()) {
-      const refreshed = await refreshTokens();
-      if (refreshed) {
-        headers['Authorization'] = `Bearer ${getToken()}`;
-        return fetch(`${API}${path}`, { ...opts, headers });
+    if (res.status === 401) {
+      if (getRefreshToken()) {
+        const refreshed = await refreshTokens();
+        if (refreshed) {
+          headers['Authorization'] = `Bearer ${getToken()}`;
+          return fetch(`${API}${path}`, { ...opts, headers });
+        }
       }
+      // Refresh failed or no refresh token — session expired
+      clearTokens();
+      MakonAPI.clearUser();
+      onAuthChange(false);
+      showToast('Сессия истекла. Войдите снова.');
+      if (typeof openAuth === 'function') openAuth();
+      return res;
     }
 
     return res;
@@ -77,7 +86,7 @@
 
   async function _doRefresh() {
     const rt = getRefreshToken();
-    if (!rt) return false;
+    if (!rt) { console.warn('[Auth] No refresh token found'); return false; }
 
     try {
       const res = await fetch(`${API}/api/auth/refresh`, {
@@ -89,12 +98,15 @@
       if (res.ok) {
         const data = await res.json();
         setTokens(data.accessToken, data.refreshToken);
+        console.log('[Auth] Token refreshed successfully');
         return true;
       }
-    } catch {}
+      const err = await res.json().catch(() => ({}));
+      console.warn('[Auth] Refresh failed:', res.status, err.error || err.code || '');
+    } catch (e) {
+      console.warn('[Auth] Refresh network error:', e.message);
+    }
 
-    // Refresh failed — don't clear tokens aggressively,
-    // let the caller decide (user might just have a network issue)
     return false;
   }
 
@@ -511,6 +523,8 @@
           gender: gender,
         }),
       });
+      // 401 already handled by authFetch (session expired → re-login prompt)
+      if (res.status === 401) return;
       var data = await res.json();
       if (data.ok) {
         // Update local user
@@ -600,14 +614,11 @@
       MakonAPI.setUser(user.id);
       onAuthChange(true);
 
-      // Verify token in background — but don't aggressively logout on failure
-      // Only logout if the server explicitly returns 401 (not on network errors)
+      // Verify token in background — authFetch now handles 401 + expired sessions
       MakonAPI.getMe().then(freshUser => {
         if (freshUser) {
-          // Update UI with fresh data
           updateUIForUser(freshUser);
         }
-        // Don't logout on failure — user might just have a temporary network issue
       });
     }
   }

@@ -842,18 +842,6 @@ input[type="date"].form-input::-webkit-calendar-picker-indicator:hover{opacity:1
         <div class="settings-item__left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><div><div class="settings-item__text">Пригласить друга</div><div class="settings-item__sub">Получите бонусные дни Premium</div></div></div>
         <div class="settings-item__right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></div>
       </div>
-      <div class="settings-item" style="opacity:.5;pointer-events:none">
-        <div class="settings-item__left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg><div><div class="settings-item__text">Управление профилями</div><div class="settings-item__sub">Скоро</div></div></div>
-        <div class="settings-item__right"><span style="font-size:11px;color:var(--t3);padding:2px 8px;border-radius:var(--pill);background:rgba(255,255,255,.06)">Скоро</span></div>
-      </div>
-      <div class="settings-item" style="opacity:.5;pointer-events:none">
-        <div class="settings-item__left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg><div><div class="settings-item__text">Качество видео</div></div></div>
-        <div class="settings-item__right"><span class="settings-item__val" style="color:var(--t3)">Скоро</span></div>
-      </div>
-      <div class="settings-item" style="opacity:.5;pointer-events:none">
-        <div class="settings-item__left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg><div><div class="settings-item__text">Язык субтитров</div></div></div>
-        <div class="settings-item__right"><span class="settings-item__val" style="color:var(--t3)">Скоро</span></div>
-      </div>
       <div class="settings-item">
         <div class="settings-item__left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><div><div class="settings-item__text">Уведомления</div></div></div>
         <div class="settings-item__right"><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
@@ -1400,8 +1388,8 @@ function mkSec(title,carId,collSlug){var allBtn=collSlug?`<span class="sec-m" on
 /* ═══ BUILD PAGES ═══ */
 function buildHome(){
   const el=document.getElementById('home-main');
-  el.innerHTML=mkSec('Продолжить просмотр','hc-cw')+mkSec('🔥 В тренде','hc-tr')+mkSec('Новинки недели','hc-nw')+mkSec('Рекомендуем для вас','hc-rc');
-  rCW('hc-cw');rPC('hc-tr',M.slice(0,8),'top');rPC('hc-nw',[...M.slice(8),...S.slice(0,4)],'new');rPC('hc-rc',[...S,...M.slice(2,6)],'exc');
+  el.innerHTML=mkSec('Популярное','hc-tr')+mkSec('Новинки','hc-nw')+mkSec('Рекомендации','hc-rc');
+  rSkel('hc-tr',6);rSkel('hc-nw',6);rSkel('hc-rc',6);
 }
 function buildCatalogs(){
   // Show skeletons first, then fill
