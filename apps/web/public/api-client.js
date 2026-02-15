@@ -674,29 +674,9 @@
   };
 
   // ═══════════════════════════
-  // 7. PLANS PAGE
+  // 7. PLANS PAGE — keep static HTML, don't override with dynamic API data
+  // Static plan cards in index.html already have correct styling.
   // ═══════════════════════════
-  const _origUpdatePlans = window.updatePlans;
-
-  window.updatePlans = function() {
-    api('/api/plans').then(plansList => {
-      const container = document.querySelector('#page-plans .plans-grid, .plan-cards');
-      if (!container) { _origUpdatePlans(); return; }
-
-      container.innerHTML = plansList.map(p => {
-        const features = Array.isArray(p.features) ? p.features : [];
-        return `<div class="plan-c ${p.isBest ? 'plan-best' : ''}">
-          ${p.isBest ? '<div class="plan-badge">Лучший выбор</div>' : ''}
-          <div class="plan-name">${p.name}</div>
-          <div class="plan-price">${p.priceLabel || p.price + ' сум/мес'}</div>
-          <ul class="plan-feat">${features.map(f => `<li>${f}</li>`).join('')}</ul>
-          <button class="plan-btn" onclick="go('checkout')">Выбрать</button>
-        </div>`;
-      }).join('');
-    }).catch(() => {
-      _origUpdatePlans();
-    });
-  };
 
   // ═══════════════════════════
   // 8. NOTIFICATIONS

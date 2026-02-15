@@ -44,6 +44,9 @@
 
   // ═══ AUTH API ═══
 
+  // Refresh lock to prevent concurrent refresh attempts
+  var _refreshPromise = null;
+
   async function authFetch(path, opts = {}) {
     const headers = { 'Content-Type': 'application/json', ...opts.headers };
     const token = getToken();
@@ -64,6 +67,15 @@
   }
 
   async function refreshTokens() {
+    // Use lock to prevent concurrent refresh calls
+    if (_refreshPromise) return _refreshPromise;
+
+    _refreshPromise = _doRefresh();
+    try { return await _refreshPromise; }
+    finally { _refreshPromise = null; }
+  }
+
+  async function _doRefresh() {
     const rt = getRefreshToken();
     if (!rt) return false;
 
@@ -81,8 +93,8 @@
       }
     } catch {}
 
-    // Refresh failed — logout
-    clearTokens();
+    // Refresh failed — don't clear tokens aggressively,
+    // let the caller decide (user might just have a network issue)
     return false;
   }
 
@@ -102,6 +114,8 @@
         return null;
       }
 
+      // Clear old session before setting new
+      clearTokens();
       setTokens(data.accessToken, data.refreshToken);
       setUser(data.user);
       MakonAPI.setUser(data.user.id);
@@ -130,6 +144,8 @@
         return null;
       }
 
+      // Clear old session before setting new
+      clearTokens();
       setTokens(data.accessToken, data.refreshToken);
       setUser(data.user);
       MakonAPI.setUser(data.user.id);
@@ -158,6 +174,8 @@
         return null;
       }
 
+      // Clear old session before setting new
+      clearTokens();
       setTokens(data.accessToken, data.refreshToken);
       setUser(data.user);
       MakonAPI.setUser(data.user.id);
@@ -312,6 +330,8 @@
       }
       // Update nav + profile UI with cached user data first
       updateUIForUser(user);
+      // Update plans buttons
+      if (typeof updatePlans === 'function') updatePlans();
       // Then fetch fresh data from API
       loadProfileData();
       MakonAPI.loadNotifications();
@@ -580,12 +600,14 @@
       MakonAPI.setUser(user.id);
       onAuthChange(true);
 
-      // Verify token in background
+      // Verify token in background — but don't aggressively logout on failure
+      // Only logout if the server explicitly returns 401 (not on network errors)
       MakonAPI.getMe().then(freshUser => {
-        if (!freshUser) {
-          clearTokens();
-          onAuthChange(false);
+        if (freshUser) {
+          // Update UI with fresh data
+          updateUIForUser(freshUser);
         }
+        // Don't logout on failure — user might just have a temporary network issue
       });
     }
   }

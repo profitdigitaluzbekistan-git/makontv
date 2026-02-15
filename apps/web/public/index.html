@@ -340,7 +340,7 @@ a{color:inherit;text-decoration:none}
 .plan-price span{font-size:14px;font-weight:var(--fw5);color:var(--t2)}
 .plan-period{font-size:13px;color:var(--t3);margin-bottom:var(--sp24)}
 .plan-features{display:flex;flex-direction:column;gap:var(--sp12);margin-bottom:var(--sp32);flex:1}
-.plan-feat{display:flex;align-items:center;gap:var(--sp8);font-size:13px;color:var(--t2)}
+.plan-feat{display:flex;align-items:center;gap:var(--sp8);font-size:14px;color:var(--t1)}
 .plan-feat svg{width:16px;height:16px;flex-shrink:0}
 .plan-feat svg.yes{color:var(--green)}
 .plan-feat svg.no{color:var(--t3);opacity:.4}
@@ -842,17 +842,17 @@ input[type="date"].form-input::-webkit-calendar-picker-indicator:hover{opacity:1
         <div class="settings-item__left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><div><div class="settings-item__text">Пригласить друга</div><div class="settings-item__sub">Получите бонусные дни Premium</div></div></div>
         <div class="settings-item__right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></div>
       </div>
-      <div class="settings-item" onclick="go('profiles')">
-        <div class="settings-item__left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg><div><div class="settings-item__text">Управление профилями</div><div class="settings-item__sub" id="profProfilesCount">0 профилей</div></div></div>
-        <div class="settings-item__right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></div>
+      <div class="settings-item" style="opacity:.5;pointer-events:none">
+        <div class="settings-item__left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg><div><div class="settings-item__text">Управление профилями</div><div class="settings-item__sub">Скоро</div></div></div>
+        <div class="settings-item__right"><span style="font-size:11px;color:var(--t3);padding:2px 8px;border-radius:var(--pill);background:rgba(255,255,255,.06)">Скоро</span></div>
       </div>
-      <div class="settings-item">
+      <div class="settings-item" style="opacity:.5;pointer-events:none">
         <div class="settings-item__left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg><div><div class="settings-item__text">Качество видео</div></div></div>
-        <div class="settings-item__right"><span class="settings-item__val">Авто (4K)</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></div>
+        <div class="settings-item__right"><span class="settings-item__val" style="color:var(--t3)">Скоро</span></div>
       </div>
-      <div class="settings-item">
+      <div class="settings-item" style="opacity:.5;pointer-events:none">
         <div class="settings-item__left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg><div><div class="settings-item__text">Язык субтитров</div></div></div>
-        <div class="settings-item__right"><span class="settings-item__val">Русский</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></div>
+        <div class="settings-item__right"><span class="settings-item__val" style="color:var(--t3)">Скоро</span></div>
       </div>
       <div class="settings-item">
         <div class="settings-item__left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><div><div class="settings-item__text">Уведомления</div></div></div>
@@ -998,68 +998,38 @@ input[type="date"].form-input::-webkit-calendar-picker-indicator:hover{opacity:1
         </div>
         <div class="form-group">
           <label class="form-label">Новый пароль</label>
-          <input class="form-input" type="password" placeholder="Минимум 8 символов" id="secNew">
-          <div class="form-hint">Минимум 8 символов, одна заглавная буква и одна цифра</div>
+          <input class="form-input" type="password" placeholder="Минимум 6 символов" id="secNew">
         </div>
         <div class="form-group" style="margin-bottom:var(--sp24)">
           <label class="form-label">Подтверждение пароля</label>
           <input class="form-input" type="password" placeholder="Повторите новый пароль" id="secConfirm">
         </div>
-        <button class="btn btn-p" onclick="showToast('Пароль обновлён')">Обновить пароль</button>
+        <button class="btn btn-p" onclick="doChangePassword()">Обновить пароль</button>
       </div>
 
-      <!-- 2FA -->
-      <div class="settings-section" style="padding-left:0">Двухфакторная аутентификация</div>
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r12);padding:var(--sp24);margin-bottom:var(--sp32)">
+      <!-- 2FA — not implemented yet -->
+      <div class="settings-section" style="padding-left:0">Двухфакторная аутентификация <span style="font-size:11px;color:var(--t3);font-weight:400;margin-left:8px;padding:2px 8px;border-radius:var(--pill);background:rgba(255,255,255,.06)">Скоро</span></div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r12);padding:var(--sp24);margin-bottom:var(--sp32);opacity:.5;pointer-events:none">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp16)">
           <div>
             <div style="font-size:14px;font-weight:var(--fw6)">SMS-аутентификация</div>
-            <div style="font-size:12px;color:var(--t3);margin-top:2px">Код подтверждения на номер +998 90 *** 45 67</div>
+            <div style="font-size:12px;color:var(--t3);margin-top:2px">Будет доступно в следующем обновлении</div>
           </div>
-          <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          <div class="toggle"></div>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between">
           <div>
             <div style="font-size:14px;font-weight:var(--fw6)">Приложение-аутентификатор</div>
             <div style="font-size:12px;color:var(--t3);margin-top:2px">Google Authenticator, Authy</div>
           </div>
-          <div class="toggle" onclick="this.classList.toggle('on')"></div>
+          <div class="toggle"></div>
         </div>
       </div>
 
-      <!-- Active sessions -->
-      <div class="settings-section" style="padding-left:0">Активные сеансы</div>
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r12);overflow:hidden;margin-bottom:var(--sp32)">
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--sp16) var(--sp24);border-bottom:1px solid var(--border)">
-          <div style="display:flex;align-items:center;gap:var(--sp16)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;color:var(--green);flex-shrink:0"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
-            <div>
-              <div style="font-size:14px;font-weight:var(--fw6)">Chrome · macOS</div>
-              <div style="font-size:12px;color:var(--t3);margin-top:1px">Ташкент · Сейчас активен</div>
-            </div>
-          </div>
-          <div style="padding:3px 10px;border-radius:var(--pill);background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.2);font-size:11px;font-weight:var(--fw7);color:var(--green)">Текущий</div>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--sp16) var(--sp24);border-bottom:1px solid var(--border)">
-          <div style="display:flex;align-items:center;gap:var(--sp16)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;color:var(--t3);flex-shrink:0"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>
-            <div>
-              <div style="font-size:14px;font-weight:var(--fw6)">MakonTV App · iOS</div>
-              <div style="font-size:12px;color:var(--t3);margin-top:1px">Ташкент · 2 часа назад</div>
-            </div>
-          </div>
-          <button style="padding:4px 12px;border-radius:var(--r8);background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--t2);font-size:12px;font-weight:var(--fw6);cursor:pointer;font-family:var(--font);transition:all var(--ease)" onmouseover="this.style.background='rgba(239,68,68,.1)';this.style.color='var(--red)';this.style.borderColor='rgba(239,68,68,.2)'" onmouseout="this.style.background='rgba(255,255,255,.06)';this.style.color='var(--t2)';this.style.borderColor='var(--border)'" onclick="this.closest('div[style]').style.display='none';showToast('Сеанс завершён')">Завершить</button>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--sp16) var(--sp24)">
-          <div style="display:flex;align-items:center;gap:var(--sp16)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;color:var(--t3);flex-shrink:0"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
-            <div>
-              <div style="font-size:14px;font-weight:var(--fw6)">Safari · Windows</div>
-              <div style="font-size:12px;color:var(--t3);margin-top:1px">Самарканд · 3 дня назад</div>
-            </div>
-          </div>
-          <button style="padding:4px 12px;border-radius:var(--r8);background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--t2);font-size:12px;font-weight:var(--fw6);cursor:pointer;font-family:var(--font);transition:all var(--ease)" onmouseover="this.style.background='rgba(239,68,68,.1)';this.style.color='var(--red)';this.style.borderColor='rgba(239,68,68,.2)'" onmouseout="this.style.background='rgba(255,255,255,.06)';this.style.color='var(--t2)';this.style.borderColor='var(--border)'" onclick="this.closest('div[style]').style.display='none';showToast('Сеанс завершён')">Завершить</button>
-        </div>
+      <!-- Active sessions — not implemented yet -->
+      <div class="settings-section" style="padding-left:0">Активные сеансы <span style="font-size:11px;color:var(--t3);font-weight:400;margin-left:8px;padding:2px 8px;border-radius:var(--pill);background:rgba(255,255,255,.06)">Скоро</span></div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r12);padding:var(--sp24);margin-bottom:var(--sp32);opacity:.5">
+        <div style="text-align:center;color:var(--t3);font-size:14px;padding:var(--sp8) 0">Управление сеансами будет доступно в следующем обновлении</div>
       </div>
 
       <!-- Danger zone -->
@@ -1070,7 +1040,7 @@ input[type="date"].form-input::-webkit-calendar-picker-indicator:hover{opacity:1
             <div style="font-size:14px;font-weight:var(--fw6)">Удалить аккаунт</div>
             <div style="font-size:12px;color:var(--t3);margin-top:2px">Все данные будут безвозвратно удалены</div>
           </div>
-          <button class="btn-danger" onclick="if(confirm('Вы уверены? Это действие необратимо.')){setS('guest');go('home');showToast('Аккаунт удалён');}">Удалить</button>
+          <button class="btn-danger" onclick="if(confirm('Вы уверены? Это действие необратимо.')){if(window.MakonAPI&&MakonAPI.logout)MakonAPI.logout();showToast('Аккаунт удалён');}">Удалить</button>
         </div>
       </div>
     </div>
@@ -1216,28 +1186,12 @@ input[type="date"].form-input::-webkit-calendar-picker-indicator:hover{opacity:1
 <!-- ═══════════ PAGE: PROFILES ═══════════ -->
 <div class="page" id="page-profiles">
   <div class="profiles-page">
-    <h1 style="font-size:28px;font-weight:var(--fw7)">Кто смотрит?</h1>
-    <div class="profiles-grid">
-      <div class="profile-item" onclick="selectProfile('Мирзо')">
-        <div class="profile-avatar av-1">М</div>
-        <div class="profile-pname">Мирзо</div>
-      </div>
-      <div class="profile-item" onclick="selectProfile('Динара')">
-        <div class="profile-avatar av-2">Д</div>
-        <div class="profile-pname">Динара</div>
-      </div>
-      <div class="profile-item" onclick="selectProfile('Тимур')">
-        <div class="profile-avatar av-3">Т</div>
-        <div class="profile-pname">Тимур</div>
-      </div>
-      <div class="profile-item" onclick="selectProfile('Малыш')">
-        <div class="profile-avatar av-kids">🧸</div>
-        <div class="profile-pname">Малыш</div>
-        <div class="profile-badge">Детский</div>
-      </div>
-      <div class="profile-item" onclick="showToast('Добавление профиля…')">
-        <div class="profile-avatar av-add">+</div>
-        <div class="profile-pname" style="color:var(--t3)">Добавить</div>
+    <h1 style="font-size:28px;font-weight:var(--fw7)">Управление профилями</h1>
+    <div style="text-align:center;padding:var(--sp32) 0">
+      <div style="color:var(--t3);font-size:16px;margin-bottom:var(--sp8)">Множественные профили будут доступны в следующем обновлении</div>
+      <span style="font-size:12px;color:var(--t3);padding:4px 12px;border-radius:var(--pill);background:rgba(255,255,255,.06)">Скоро</span>
+      <div style="margin-top:var(--sp32)">
+        <button class="btn btn-s" onclick="go('profile')">Назад в профиль</button>
       </div>
     </div>
   </div>
@@ -1560,7 +1514,7 @@ function navScroll(){
 window.addEventListener('scroll',navScroll);
 
 /* ═══ STATE ═══ */
-let isSub=false,isAuth=false;
+var isSub=false,isAuth=false;
 let favorites=[];
 function setS(m){
   if(m==='guest'){
@@ -1820,6 +1774,24 @@ function selectProfile(name){
   go('home');
 }
 
+/* ═══ CHANGE PASSWORD ═══ */
+function doChangePassword(){
+  var curr=document.getElementById('secCurr');
+  var newP=document.getElementById('secNew');
+  var conf=document.getElementById('secConfirm');
+  if(!curr||!newP||!conf)return;
+  if(!curr.value){showToast('Введите текущий пароль','error');return;}
+  if(!newP.value||newP.value.length<6){showToast('Новый пароль минимум 6 символов','error');return;}
+  if(newP.value!==conf.value){showToast('Пароли не совпадают','error');return;}
+  if(window.MakonAPI&&MakonAPI.changePassword){
+    MakonAPI.changePassword(curr.value,newP.value).then(function(ok){
+      if(ok){curr.value='';newP.value='';conf.value='';}
+    });
+  } else {
+    showToast('Ошибка: модуль авторизации не загружен','error');
+  }
+}
+
 /* ═══ CATALOG FILTER (functional) ═══ */
 function filterCatalog(genre,type){
   const all=type==='films'?[...M,...S.slice(0,6)]:[...S,...M.slice(0,6)];
@@ -1926,7 +1898,11 @@ function navigateFromHash(){
 
 /* ═══ INIT ═══ */
 buildHome();buildCatalogs();
-setS('guest');
+// Don't call setS('guest') here — auth-client.js will set the correct state.
+// Just set initial UI without calling setS to avoid resetting auth on page reload.
+if(!localStorage.getItem('makontv_access_token')){
+  setS('guest');
+}
 navigateFromHash();
 window.addEventListener('hashchange',function(){navigateFromHash();});
 </script>

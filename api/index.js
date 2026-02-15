@@ -46049,7 +46049,9 @@ app.post("/api/reviews", async (c4) => {
   }
   return c4.json(review, 201);
 });
-app.use("/api/auth/*", authRateLimit);
+app.use("/api/auth/login", authRateLimit);
+app.use("/api/auth/register", authRateLimit);
+app.use("/api/auth/google", authRateLimit);
 app.use("/api/search", searchRateLimit);
 app.route("/api/home", home_default);
 app.route("/api/genres", genres_default);

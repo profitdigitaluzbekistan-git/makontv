@@ -143,7 +143,10 @@ app.post('/api/reviews', async (c) => {
 });
 
 // ═══ ROUTES ═══
-app.use('/api/auth/*', authRateLimit);
+// Rate limit only login/register endpoints, not profile/me/avatar/refresh
+app.use('/api/auth/login', authRateLimit);
+app.use('/api/auth/register', authRateLimit);
+app.use('/api/auth/google', authRateLimit);
 app.use('/api/search', searchRateLimit);
 app.route('/api/home', homeRoute);
 app.route('/api/genres', genresRoute);
