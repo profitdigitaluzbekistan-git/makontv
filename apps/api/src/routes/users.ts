@@ -51,8 +51,17 @@ usersRoute.get('/:id/favorites', async (c) => {
     .where(eq(favorites.userId, userId))
     .orderBy(desc(favorites.createdAt));
 
+  // Deduplicate by movieId/seriesId — keep only the first (newest) entry
+  const seen = new Set<string>();
+  const uniqueFavs = favs.filter((fav) => {
+    const key = fav.movieId ? `m:${fav.movieId}` : `s:${fav.seriesId}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
   const result = [];
-  for (const fav of favs) {
+  for (const fav of uniqueFavs) {
     if (fav.movieId) {
       const [m] = await db.select().from(movies).where(eq(movies.id, fav.movieId));
       if (m) result.push({ favoriteId: fav.id, type: 'movie', ...localizeObj(m, lang, ['title', 'shortDesc']) });
@@ -73,6 +82,17 @@ usersRoute.post('/:id/favorites', async (c) => {
 
   if (!body.movieId && !body.seriesId) {
     return c.json({ error: 'movieId or seriesId required' }, 400);
+  }
+
+  // Check for duplicate
+  const existing = await db.select({ id: favorites.id }).from(favorites).where(
+    and(
+      eq(favorites.userId, userId),
+      body.movieId ? eq(favorites.movieId, body.movieId) : eq(favorites.seriesId, body.seriesId!),
+    )
+  );
+  if (existing.length > 0) {
+    return c.json(existing[0], 200);
   }
 
   const [fav] = await db.insert(favorites).values({
