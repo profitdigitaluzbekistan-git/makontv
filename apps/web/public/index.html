@@ -132,7 +132,7 @@ a{color:inherit;text-decoration:none}
 .pg-1{background:linear-gradient(145deg,#1a1a3e,#2d1b4e,#1b2838)}.pg-2{background:linear-gradient(145deg,#2d1b1b,#3a2020,#1b2838)}.pg-3{background:linear-gradient(145deg,#1b3828,#1a3e2e,#0d2b1a)}.pg-4{background:linear-gradient(145deg,#382d1b,#3e351a,#2b200d)}.pg-5{background:linear-gradient(145deg,#1b2838,#1a2e3e,#0d1b2a)}.pg-6{background:linear-gradient(145deg,#381b38,#3e1a3e,#2a0d2a)}.pg-7{background:linear-gradient(145deg,#1b3838,#1a3e3e,#0d2a2a)}.pg-8{background:linear-gradient(145deg,#38381b,#3e3e1a,#2a2a0d)}
 
 /* ═══ HERO (homepage) ═══ */
-.hero{position:relative;width:100%;height:560px;overflow:hidden}
+.hero{position:relative;width:100%;height:560px;overflow:hidden;touch-action:pan-y}
 .hero-track{display:flex;height:100%;transition:transform .6s cubic-bezier(.4,0,.2,1)}
 .hero-slide{position:relative;min-width:100%;width:100%;height:100%;flex-shrink:0}
 .hero-bg{position:absolute;inset:0;background:linear-gradient(135deg,#1a1a3e 0%,#0d1b2a 30%,#1b2838 60%,#0a0a0f 100%);background-size:cover;background-position:center}
@@ -1673,14 +1673,25 @@ function heroSlide(dir){
 }
 (function(){
   var hero=document.getElementById('heroSection');if(!hero)return;
-  var sx=0,sy=0,moving=false;
-  hero.addEventListener('touchstart',function(e){sx=e.touches[0].clientX;sy=e.touches[0].clientY;moving=true;},{passive:true});
-  hero.addEventListener('touchmove',function(e){e.preventDefault();},{passive:false});
+  var sx=0,sy=0,moving=false,isHoriz=null;
+  hero.addEventListener('touchstart',function(e){sx=e.touches[0].clientX;sy=e.touches[0].clientY;moving=true;isHoriz=null;},{passive:true});
+  hero.addEventListener('touchmove',function(e){
+    if(!moving)return;
+    var dx=e.touches[0].clientX-sx;
+    var dy=e.touches[0].clientY-sy;
+    // Decide direction on first significant move
+    if(isHoriz===null&&(Math.abs(dx)>8||Math.abs(dy)>8)){
+      isHoriz=Math.abs(dx)>Math.abs(dy);
+    }
+    // Only block default for horizontal swipes
+    if(isHoriz)e.preventDefault();
+  },{passive:false});
   hero.addEventListener('touchend',function(e){
     if(!moving)return;moving=false;
     var dx=e.changedTouches[0].clientX-sx;
     var dy=e.changedTouches[0].clientY-sy;
-    if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)){heroSlide(dx<0?1:-1);}
+    if(isHoriz&&Math.abs(dx)>50){heroSlide(dx<0?1:-1);}
+    isHoriz=null;
   },{passive:true});
 })();
 /* ═══ INTERACTIVE ═══ */
