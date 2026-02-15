@@ -293,6 +293,10 @@ auth.get('/me', authRequired, async (c) => {
     id: user.id,
     email: user.email,
     name: user.name,
+    phone: user.phone,
+    birthDate: user.birthDate,
+    gender: user.gender,
+    avatarUrl: user.avatarUrl,
     role: user.role,
     language: user.language,
     subscriptionStatus: user.subscriptionStatus,
@@ -331,6 +335,52 @@ auth.post('/password', authRequired, async (c) => {
   await db.update(users).set({ passwordHash: newHash }).where(eq(users.id, userId));
 
   return c.json({ ok: true, message: 'Пароль изменён' });
+});
+
+// ═══ UPDATE PROFILE ═══
+auth.put('/profile', authRequired, async (c) => {
+  const db = getDb();
+  const userId = c.get('userId');
+  const body = await c.req.json<{
+    name?: string | { ru?: string; uz?: string };
+    phone?: string;
+    birthDate?: string;
+    gender?: string;
+    avatarUrl?: string;
+    language?: string;
+  }>();
+
+  const updates: Record<string, any> = {};
+  if (body.name !== undefined) updates.name = body.name;
+  if (body.phone !== undefined) updates.phone = body.phone;
+  if (body.birthDate !== undefined) updates.birthDate = body.birthDate;
+  if (body.gender !== undefined) updates.gender = body.gender;
+  if (body.avatarUrl !== undefined) updates.avatarUrl = body.avatarUrl;
+  if (body.language !== undefined) updates.language = body.language;
+
+  if (Object.keys(updates).length === 0) {
+    return c.json({ error: 'Нет данных для обновления' }, 400);
+  }
+
+  const [updated] = await db.update(users).set(updates)
+    .where(eq(users.id, userId)).returning();
+
+  if (!updated) return c.json({ error: 'Пользователь не найден' }, 404);
+
+  return c.json({
+    ok: true,
+    user: {
+      id: updated.id,
+      email: updated.email,
+      name: updated.name,
+      phone: updated.phone,
+      birthDate: updated.birthDate,
+      gender: updated.gender,
+      avatarUrl: updated.avatarUrl,
+      language: updated.language,
+      subscriptionStatus: updated.subscriptionStatus,
+    },
+  });
 });
 
 // ═══ LOGOUT (informational — client clears tokens) ═══

@@ -45280,6 +45280,10 @@ auth.get("/me", authRequired, async (c4) => {
     id: user.id,
     email: user.email,
     name: user.name,
+    phone: user.phone,
+    birthDate: user.birthDate,
+    gender: user.gender,
+    avatarUrl: user.avatarUrl,
     role: user.role,
     language: user.language,
     subscriptionStatus: user.subscriptionStatus,
@@ -45311,6 +45315,37 @@ auth.post("/password", authRequired, async (c4) => {
   const newHash = await hashPassword(body.newPassword);
   await db.update(users).set({ passwordHash: newHash }).where(eq2(users.id, userId));
   return c4.json({ ok: true, message: "\u041F\u0430\u0440\u043E\u043B\u044C \u0438\u0437\u043C\u0435\u043D\u0451\u043D" });
+});
+auth.put("/profile", authRequired, async (c4) => {
+  const db = getDb();
+  const userId = c4.get("userId");
+  const body = await c4.req.json();
+  const updates = {};
+  if (body.name !== void 0) updates.name = body.name;
+  if (body.phone !== void 0) updates.phone = body.phone;
+  if (body.birthDate !== void 0) updates.birthDate = body.birthDate;
+  if (body.gender !== void 0) updates.gender = body.gender;
+  if (body.avatarUrl !== void 0) updates.avatarUrl = body.avatarUrl;
+  if (body.language !== void 0) updates.language = body.language;
+  if (Object.keys(updates).length === 0) {
+    return c4.json({ error: "\u041D\u0435\u0442 \u0434\u0430\u043D\u043D\u044B\u0445 \u0434\u043B\u044F \u043E\u0431\u043D\u043E\u0432\u043B\u0435\u043D\u0438\u044F" }, 400);
+  }
+  const [updated] = await db.update(users).set(updates).where(eq2(users.id, userId)).returning();
+  if (!updated) return c4.json({ error: "\u041F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044C \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D" }, 404);
+  return c4.json({
+    ok: true,
+    user: {
+      id: updated.id,
+      email: updated.email,
+      name: updated.name,
+      phone: updated.phone,
+      birthDate: updated.birthDate,
+      gender: updated.gender,
+      avatarUrl: updated.avatarUrl,
+      language: updated.language,
+      subscriptionStatus: updated.subscriptionStatus
+    }
+  });
 });
 auth.post("/logout", (c4) => {
   return c4.json({ ok: true, message: "\u0423\u0434\u0430\u043B\u0438\u0442\u0435 \u0442\u043E\u043A\u0435\u043D\u044B \u043D\u0430 \u043A\u043B\u0438\u0435\u043D\u0442\u0435" });

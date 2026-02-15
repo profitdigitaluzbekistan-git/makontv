@@ -675,14 +675,14 @@ a{color:inherit;text-decoration:none}
       <div class="nav-lang"><button class="nav-lang-b active">RU</button><button class="nav-lang-b">UZ</button></div>
       <button class="nav-auth" id="navAuth" onclick="openAuth()">Войти</button>
       <div class="nav-prem" id="navPrem" style="display:none">PREMIUM</div>
-      <div class="nav-avatar" id="navAv" style="display:none" onclick="go('profile')">М</div>
+      <div class="nav-avatar" id="navAv" style="display:none" onclick="go('profile')"></div>
     </div>
   </div>
 </nav>
 
 <!-- ═══════════ PAGE: HOME ═══════════ -->
 <div class="page visible" id="page-home">
-  <div class="m-chips"><div class="chip active">Все</div><div class="chip">Фильмы</div><div class="chip">Сериалы</div><div class="chip">ТВ</div><div class="chip">Мультфильмы</div></div>
+  <div class="m-chips"><div class="chip active" onclick="go('home')">Все</div><div class="chip" onclick="go('catalog-films')">Фильмы</div><div class="chip" onclick="go('catalog-series')">Сериалы</div></div>
   <section class="hero" id="heroSection">
     <div class="hero-track" id="heroTrack"></div>
     <div class="hero-dots" id="heroDots"></div>
@@ -787,12 +787,26 @@ a{color:inherit;text-decoration:none}
 <div class="page" id="page-profile">
   <div class="ctn">
     <div class="pg-head"><h1 class="pg-title">Профиль</h1></div>
+    <!-- GUEST VIEW -->
+    <div id="profGuest">
+      <div class="empty" style="padding:var(--sp64) 0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:64px;height:64px;margin-bottom:var(--sp16);opacity:.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <div class="empty-title">Войдите в аккаунт</div>
+        <div class="empty-desc">Сохраняйте избранное, отслеживайте историю просмотра и управляйте подпиской</div>
+        <div style="display:flex;gap:var(--sp12)">
+          <button class="btn btn-p" onclick="openAuth()">Войти</button>
+          <button class="btn btn-s" onclick="openAuth();switchAuth('register')">Зарегистрироваться</button>
+        </div>
+      </div>
+    </div>
+    <!-- AUTH VIEW -->
+    <div id="profAuth" style="display:none">
     <div class="prof-card">
-      <div class="prof-av">М</div>
+      <div class="prof-av" id="profAvatar">?</div>
       <div class="prof-info">
-        <div class="prof-name">Мирзо Каримов</div>
-        <div class="prof-email"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="b4d9ddc6cedbf4d1ccd5d9c4d8d19ad7dbd9">[email&#160;protected]</a></div>
-        <div class="prof-plan" id="profPlan">Premium</div>
+        <div class="prof-name" id="profName"></div>
+        <div class="prof-email" id="profEmail"></div>
+        <div class="prof-plan" id="profPlan">Бесплатный</div>
       </div>
       <button class="btn btn-s" style="height:40px;font-size:13px" onclick="go('plans')">Управлять подпиской</button>
     </div>
@@ -816,7 +830,7 @@ a{color:inherit;text-decoration:none}
     <div class="settings-section">Настройки</div>
     <div class="settings-list">
       <div class="settings-item" onclick="go('downloads')">
-        <div class="settings-item__left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><div><div class="settings-item__text">Загрузки</div><div class="settings-item__sub">3 загруженных файла</div></div></div>
+        <div class="settings-item__left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><div><div class="settings-item__text">Загрузки</div><div class="settings-item__sub" id="profDownloads">Нет загрузок</div></div></div>
         <div class="settings-item__right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></div>
       </div>
       <div class="settings-item" onclick="go('referral')">
@@ -824,7 +838,7 @@ a{color:inherit;text-decoration:none}
         <div class="settings-item__right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></div>
       </div>
       <div class="settings-item" onclick="go('profiles')">
-        <div class="settings-item__left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg><div><div class="settings-item__text">Управление профилями</div><div class="settings-item__sub">4 профиля</div></div></div>
+        <div class="settings-item__left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg><div><div class="settings-item__text">Управление профилями</div><div class="settings-item__sub" id="profProfilesCount">0 профилей</div></div></div>
         <div class="settings-item__right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></div>
       </div>
       <div class="settings-item">
@@ -846,8 +860,9 @@ a{color:inherit;text-decoration:none}
     </div>
 
     <div style="margin-top:var(--sp32)">
-      <button class="btn-danger" onclick="setS('guest');go('home')">Выйти из аккаунта</button>
+      <button class="btn-danger" onclick="if(window.MakonAPI&&MakonAPI.logout)MakonAPI.logout();setS('guest');go('home')">Выйти из аккаунта</button>
     </div>
+    </div><!-- /profAuth -->
   </div>
 </div>
 
@@ -909,8 +924,9 @@ a{color:inherit;text-decoration:none}
     <!-- Avatar edit -->
     <div style="display:flex;align-items:center;gap:var(--sp24);margin-bottom:var(--sp32)">
       <div style="position:relative">
-        <div class="prof-av" style="width:88px;height:88px;font-size:32px">М</div>
-        <button class="btn-ic" style="width:32px;height:32px;border-radius:50%;position:absolute;bottom:0;right:-4px;background:var(--accent);color:#0A0A0F;border:2px solid var(--bg)" onclick="alert('Загрузка фото… (заглушка)')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button>
+        <div class="prof-av" id="personalAvatar" style="width:88px;height:88px;font-size:32px">?</div>
+        <input type="file" id="avatarFileInput" accept="image/jpeg,image/png" style="display:none" onchange="if(window.MakonAPI&&MakonAPI.uploadAvatar)MakonAPI.uploadAvatar(this)">
+        <button class="btn-ic" style="width:32px;height:32px;border-radius:50%;position:absolute;bottom:0;right:-4px;background:var(--accent);color:#0A0A0F;border:2px solid var(--bg)" onclick="document.getElementById('avatarFileInput').click()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button>
       </div>
       <div><div style="font-size:14px;font-weight:var(--fw6)">Фото профиля</div><div style="font-size:12px;color:var(--t3);margin-top:2px">JPG, PNG до 5 МБ</div></div>
     </div>
@@ -919,23 +935,23 @@ a{color:inherit;text-decoration:none}
     <div style="max-width:560px">
       <div class="form-group">
         <label class="form-label">Имя</label>
-        <input class="form-input" type="text" value="Мирзо" id="pName">
+        <input class="form-input" type="text" value="" id="pName" placeholder="Имя">
       </div>
       <div class="form-group">
         <label class="form-label">Фамилия</label>
-        <input class="form-input" type="text" value="Каримов" id="pSurname">
+        <input class="form-input" type="text" value="" id="pSurname" placeholder="Фамилия">
       </div>
       <div class="form-group">
         <label class="form-label">Email</label>
-        <input class="form-input" type="email" value="mirzo@example.com" id="pEmail">
+        <input class="form-input" type="email" value="" id="pEmail" placeholder="mail@example.com">
       </div>
       <div class="form-group">
         <label class="form-label">Телефон</label>
-        <input class="form-input" type="tel" value="+998 90 123 45 67" id="pPhone">
+        <input class="form-input" type="tel" value="" id="pPhone" placeholder="+998 90 123 45 67">
       </div>
       <div class="form-group">
         <label class="form-label">Дата рождения</label>
-        <input class="form-input" type="date" value="1995-03-15" id="pBirth">
+        <input class="form-input" type="date" value="" id="pBirth">
       </div>
       <div class="form-group">
         <label class="form-label">Пол</label>
@@ -946,7 +962,7 @@ a{color:inherit;text-decoration:none}
         </div>
       </div>
       <div style="display:flex;gap:var(--sp12);margin-top:var(--sp32)">
-        <button class="btn btn-p" onclick="showToast('Данные сохранены')">Сохранить</button>
+        <button class="btn btn-p" onclick="if(window.MakonAPI&&MakonAPI.saveProfile)MakonAPI.saveProfile()">Сохранить</button>
         <button class="btn btn-s" onclick="go('profile')">Отмена</button>
       </div>
     </div>
@@ -1521,11 +1537,11 @@ function go(page){
   // Nav bg
   if(page==='home'){document.getElementById('nav').classList.remove('scrolled');navScroll();}
   else{document.getElementById('nav').classList.add('scrolled');}
-  // Auth-gated pages
-  if((page==='profile'||page==='library'||page==='personal'||page==='security'||page==='downloads')&&!isAuth){
-    if(page==='profile'||page==='personal'||page==='security'||page==='downloads')openAuth();
-    if(page==='library')renderLib();
+  // Auth-gated pages — personal/security/downloads require login
+  if((page==='personal'||page==='security'||page==='downloads')&&!isAuth){
+    openAuth();
   }
+  if(page==='library'&&!isAuth)renderLib();
   if(page==='library')renderLib();
   if(page==='plans')updatePlans();
   // Set hash with slug for deep linking (don't override collection hash)

@@ -299,42 +299,235 @@
     window.isAuth = loggedIn;
     window.isSub = false;
 
+    // Toggle profile guest/auth views
+    var profGuest = document.getElementById('profGuest');
+    var profAuth = document.getElementById('profAuth');
+    if (profGuest) profGuest.style.display = loggedIn ? 'none' : '';
+    if (profAuth) profAuth.style.display = loggedIn ? '' : 'none';
+
     if (loggedIn) {
       const user = getUser();
       if (user) {
         window.isSub = user.subscriptionStatus === 'active';
       }
+      // Update nav + profile UI with cached user data first
+      updateUIForUser(user);
+      // Then fetch fresh data from API
+      loadProfileData();
       MakonAPI.loadNotifications();
       MakonAPI.loadFavorites();
-    }
-
-    // Update nav UI
-    updateNavForAuth(loggedIn);
-  }
-
-  function updateNavForAuth(loggedIn) {
-    // Profile nav item
-    const profileLink = document.querySelector('.nav-link[data-page="profile"]');
-    const authBtn = document.getElementById('navAuth');
-
-    if (loggedIn) {
-      const user = getUser();
-      if (profileLink) profileLink.style.display = '';
-      if (authBtn) authBtn.style.display = 'none';
-
-      // Update profile page data
-      const nameEl = document.querySelector('#page-profile .profile-name');
-      if (nameEl && user) nameEl.textContent = user.name?.ru || user.email;
-
-      const emailEl = document.querySelector('#page-profile .profile-email');
-      if (emailEl && user) emailEl.textContent = user.email;
-
-      const subEl = document.querySelector('#page-profile .profile-sub');
-      if (subEl && user) subEl.textContent = user.subscriptionStatus === 'active' ? 'Premium' : 'Бесплатный';
     } else {
+      // Reset to guest
+      setS('guest');
+      // Reset nav
+      var authBtn = document.getElementById('navAuth');
+      var navAv = document.getElementById('navAv');
+      var navPrem = document.getElementById('navPrem');
       if (authBtn) authBtn.style.display = '';
+      if (navAv) navAv.style.display = 'none';
+      if (navPrem) navPrem.style.display = 'none';
     }
   }
+
+  function getUserDisplayName(user) {
+    if (!user) return '';
+    if (user.name) {
+      if (typeof user.name === 'object') return user.name.ru || user.name.uz || user.email || '';
+      return user.name;
+    }
+    return user.email || '';
+  }
+
+  function getUserInitial(user) {
+    var name = getUserDisplayName(user);
+    return name ? name.charAt(0).toUpperCase() : '?';
+  }
+
+  function updateUIForUser(user) {
+    if (!user) return;
+    var isPremium = user.subscriptionStatus === 'active';
+
+    // Nav: hide "Войти", show avatar
+    var authBtn = document.getElementById('navAuth');
+    var navAv = document.getElementById('navAv');
+    var navPrem = document.getElementById('navPrem');
+    if (authBtn) authBtn.style.display = 'none';
+    if (navAv) { navAv.style.display = ''; navAv.textContent = getUserInitial(user); }
+    if (navPrem) navPrem.style.display = isPremium ? '' : 'none';
+
+    // Profile card
+    var profAvatar = document.getElementById('profAvatar');
+    var profName = document.getElementById('profName');
+    var profEmail = document.getElementById('profEmail');
+    var profPlan = document.getElementById('profPlan');
+    var profSubText = document.getElementById('profSubText');
+    var profSubVal = document.getElementById('profSubVal');
+
+    if (profAvatar) {
+      if (user.avatarUrl) {
+        profAvatar.innerHTML = '<img src="' + user.avatarUrl + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+      } else {
+        profAvatar.textContent = getUserInitial(user);
+      }
+    }
+    if (profName) profName.textContent = getUserDisplayName(user);
+    if (profEmail) profEmail.textContent = user.email || '';
+    if (profPlan) {
+      profPlan.textContent = isPremium ? 'Premium' : 'Бесплатный';
+      profPlan.className = 'prof-plan ' + (isPremium ? 'premium' : 'free');
+    }
+    if (profSubText) profSubText.textContent = isPremium ? 'Premium — активна' : 'Бесплатный тариф';
+    if (profSubVal) profSubVal.textContent = isPremium ? 'Активна' : 'Бесплатный';
+
+    // Personal data form
+    var displayName = getUserDisplayName(user);
+    var nameParts = displayName.split(' ');
+    var pName = document.getElementById('pName');
+    var pSurname = document.getElementById('pSurname');
+    var pEmail = document.getElementById('pEmail');
+    var pPhone = document.getElementById('pPhone');
+    var personalAvatar = document.getElementById('personalAvatar');
+    if (pName) pName.value = nameParts[0] || '';
+    if (pSurname) pSurname.value = nameParts.slice(1).join(' ') || '';
+    if (pEmail) pEmail.value = user.email || '';
+    if (pPhone) pPhone.value = user.phone || '';
+    if (personalAvatar) {
+      if (user.avatarUrl) {
+        personalAvatar.innerHTML = '<img src="' + user.avatarUrl + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+      } else {
+        personalAvatar.textContent = getUserInitial(user);
+      }
+    }
+
+    // Update isSub/isAuth flags without calling setS (avoid loop)
+    window.isAuth = true;
+    window.isSub = isPremium;
+  }
+
+  function loadProfileData() {
+    // Fetch fresh user data from /api/auth/me
+    authFetch(API + '/api/auth/me').then(function(r) {
+      if (!r.ok) return null;
+      return r.json();
+    }).then(function(user) {
+      if (!user || user.error) return;
+      // Update stored user
+      setUser(user);
+      window.isSub = user.subscriptionStatus === 'active';
+      // Update all UI elements
+      updateUIForUser(user);
+
+      // Profiles count
+      var profProfilesCount = document.getElementById('profProfilesCount');
+      if (profProfilesCount) {
+        var count = (user.profiles && user.profiles.length) || 0;
+        profProfilesCount.textContent = count + ' ' + (count === 1 ? 'профиль' : count < 5 ? 'профиля' : 'профилей');
+      }
+
+      // Downloads count
+      var userId = user.id;
+      if (userId && window.MakonAPI && MakonAPI.loadDownloads) {
+        MakonAPI.loadDownloads().then(function(downloads) {
+          var el = document.getElementById('profDownloads');
+          if (!el) return;
+          var c = (downloads && downloads.length) || 0;
+          el.textContent = c ? c + ' загруженных файл' + (c === 1 ? '' : c < 5 ? 'а' : 'ов') : 'Нет загрузок';
+        }).catch(function() {});
+      }
+
+      // Birth date
+      var pBirth = document.getElementById('pBirth');
+      if (pBirth && user.birthDate) pBirth.value = user.birthDate;
+
+    }).catch(function(err) {
+      console.warn('Failed to load profile:', err.message);
+    });
+  }
+
+  // ═══ SAVE PROFILE ═══
+  MakonAPI.saveProfile = async function() {
+    var pName = document.getElementById('pName');
+    var pSurname = document.getElementById('pSurname');
+    var pPhone = document.getElementById('pPhone');
+    var pBirth = document.getElementById('pBirth');
+    var firstName = pName ? pName.value.trim() : '';
+    var lastName = pSurname ? pSurname.value.trim() : '';
+    var fullName = [firstName, lastName].filter(Boolean).join(' ');
+
+    if (!fullName) { showToast('Введите имя'); return; }
+
+    try {
+      var res = await authFetch(API + '/api/auth/profile', {
+        method: 'PUT',
+        body: JSON.stringify({
+          name: fullName,
+          phone: pPhone ? pPhone.value.trim() : undefined,
+          birthDate: pBirth ? pBirth.value || undefined : undefined,
+        }),
+      });
+      var data = await res.json();
+      if (data.ok) {
+        // Update local user
+        var user = getUser();
+        if (user && data.user) {
+          Object.assign(user, data.user);
+          setUser(user);
+          updateUIForUser(user);
+        }
+        showToast('Данные сохранены');
+      } else {
+        showToast(data.error || 'Ошибка сохранения');
+      }
+    } catch (e) {
+      showToast('Ошибка сети');
+    }
+  };
+
+  // ═══ UPLOAD AVATAR ═══
+  MakonAPI.uploadAvatar = async function(fileInput) {
+    var file = fileInput && fileInput.files && fileInput.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { showToast('Файл слишком большой (макс. 5 МБ)'); return; }
+
+    showToast('Загрузка фото...');
+    try {
+      // Upload via admin upload endpoint with auth token
+      var formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', 'avatars');
+
+      var token = getToken();
+      var res = await fetch(API + '/admin/upload', {
+        method: 'POST',
+        headers: token ? { 'Authorization': 'Bearer ' + token } : {},
+        body: formData,
+      });
+      var data = await res.json();
+      if (data.success && data.publicUrl) {
+        // Save avatar URL to profile
+        var res2 = await authFetch(API + '/api/auth/profile', {
+          method: 'PUT',
+          body: JSON.stringify({ avatarUrl: data.publicUrl }),
+        });
+        var data2 = await res2.json();
+        if (data2.ok) {
+          var user = getUser();
+          if (user) { user.avatarUrl = data.publicUrl; setUser(user); updateUIForUser(user); }
+          showToast('Фото обновлено');
+        } else {
+          showToast(data2.error || 'Ошибка сохранения');
+        }
+      } else {
+        showToast(data.error || 'Ошибка загрузки');
+      }
+    } catch (e) {
+      showToast('Ошибка загрузки файла');
+    }
+    fileInput.value = '';
+  };
+
+  // Expose for external use
+  MakonAPI.loadProfileData = loadProfileData;
 
   // ═══ HOOK INTO AUTH MODAL ═══
 
