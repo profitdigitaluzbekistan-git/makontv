@@ -779,24 +779,41 @@
   MakonAPI.loadFavorites = function() {
     if (!CURRENT_USER_ID) return Promise.resolve([]);
 
-    return api(`/api/users/${CURRENT_USER_ID}/favorites`).then(favs => {
+    var fetchFavs = MakonAPI.authFetch
+      ? MakonAPI.authFetch(`/api/users/${CURRENT_USER_ID}/favorites`).then(r => {
+          if (!r.ok) throw new Error(r.statusText);
+          return r.json();
+        })
+      : api(`/api/users/${CURRENT_USER_ID}/favorites`);
+
+    return fetchFavs.then(favs => {
       window._apiFavorites = favs;
       return favs;
     }).catch(() => []);
   };
 
   MakonAPI.addFavorite = function(movieId, seriesId) {
+    if (!window.isAuth) { if (window.openAuth) openAuth(); return; }
     if (!CURRENT_USER_ID) return;
     const body = movieId ? { movieId } : { seriesId };
-    apiPost(`/api/users/${CURRENT_USER_ID}/favorites`, body).then(() => {
+    (MakonAPI.authFetch
+      ? MakonAPI.authFetch(`/api/users/${CURRENT_USER_ID}/favorites`, {
+          method: 'POST',
+          body: JSON.stringify(body),
+        }).then(r => r.json())
+      : apiPost(`/api/users/${CURRENT_USER_ID}/favorites`, body)
+    ).then(() => {
       showToast('Добавлено в избранное');
     });
   };
 
   MakonAPI.removeFavorite = function(favoriteId) {
+    if (!window.isAuth) return;
     if (!CURRENT_USER_ID) return;
-    fetch(`${API_BASE}/api/users/${CURRENT_USER_ID}/favorites/${favoriteId}`, { method: 'DELETE' })
-      .then(() => showToast('Удалено из избранного'));
+    (MakonAPI.authFetch
+      ? MakonAPI.authFetch(`/api/users/${CURRENT_USER_ID}/favorites/${favoriteId}`, { method: 'DELETE' })
+      : fetch(`${API_BASE}/api/users/${CURRENT_USER_ID}/favorites/${favoriteId}`, { method: 'DELETE' })
+    ).then(() => showToast('Удалено из избранного'));
   };
 
   // ═══════════════════════════
