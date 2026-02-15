@@ -361,6 +361,10 @@ a{color:inherit;text-decoration:none}
 .empty-title{font-size:18px;font-weight:var(--fw6);margin-bottom:var(--sp8)}
 .empty-desc{font-size:14px;color:var(--t3);max-width:360px;margin-bottom:var(--sp24);line-height:1.5}
 
+/* ═══ DETAIL LOADING OVERLAY ═══ */
+@keyframes spin{to{transform:rotate(360deg)}}
+.detail-overlay{position:absolute;inset:0;z-index:10;background:var(--bg);display:flex;align-items:center;justify-content:center;min-height:80vh}
+.detail-spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,.1);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
 /* ═══ SKELETON (NEW) ═══ */
 @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
 .skel{background:linear-gradient(90deg,var(--bg-card) 25%,var(--bg-el) 50%,var(--bg-card) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:var(--r8)}
@@ -615,7 +619,7 @@ a{color:inherit;text-decoration:none}
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 
 /* ═══ PAGE VISIBILITY ═══ */
-.page{display:none}
+.page{display:none;position:relative}
 .page.visible{display:block}
 
 /* ═══ RESPONSIVE ═══ */
@@ -1317,7 +1321,7 @@ a{color:inherit;text-decoration:none}
 
 <!-- ═══ AUTH MODAL ═══ -->
 <div class="mo" id="authModal" onclick="closeAuth(event)">
-  <div class="mo-box" style="padding-top:var(--sp32)">
+  <div class="mo-box" style="padding-top:60px">
     <button class="mo-x" onclick="closeAuth()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
     <button class="google-btn" onclick="doGoogleLogin()">
       <svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A10.96 10.96 0 0 0 1 12c0 1.77.42 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
@@ -1425,7 +1429,7 @@ function rSkel(id,n){
 }
 
 /* ═══ RENDER: Section helper ═══ */
-function mkSec(title,carId){return`<section class="sec"><div class="ctn"><div class="sec-h"><h2 class="sec-t">${title}</h2><span class="sec-m">Все ${IC.chev}</span></div><div class="car-w"><div class="car" id="${carId}"></div><button class="arr l" onclick="sc('${carId}',-1)">${IC.arrL}</button><button class="arr r" onclick="sc('${carId}',1)">${IC.arrR}</button></div></div></section>`;}
+function mkSec(title,carId,collSlug){var allBtn=collSlug?`<span class="sec-m" onclick="goCollection('${collSlug}')" style="cursor:pointer">Все ${IC.chev}</span>`:`<span class="sec-m">Все ${IC.chev}</span>`;return`<section class="sec"><div class="ctn"><div class="sec-h"><h2 class="sec-t">${title}</h2>${allBtn}</div><div class="car-w"><div class="car" id="${carId}"></div><button class="arr l" onclick="sc('${carId}',-1)">${IC.arrL}</button><button class="arr r" onclick="sc('${carId}',1)">${IC.arrR}</button></div></div></section>`;}
 
 /* ═══ BUILD PAGES ═══ */
 function buildHome(){
@@ -1524,9 +1528,12 @@ function go(page){
   }
   if(page==='library')renderLib();
   if(page==='plans')updatePlans();
-  // Set hash with slug for deep linking
+  // Set hash with slug for deep linking (don't override collection hash)
+  var curHash=location.hash.replace(/^#/,'');
   if((page==='detail'||page==='series-detail')&&window._currentSlug){
     location.hash=page+'&slug='+encodeURIComponent(window._currentSlug);
+  } else if(page==='catalog-films'&&curHash.indexOf('collection=')!==-1){
+    // keep collection param — already set by goCollection()
   } else {
     location.hash=page;
   }
@@ -1781,8 +1788,59 @@ function parseHash(hash){
     var kv=parts[i].split('=');
     if(kv.length===2)params[kv[0]]=decodeURIComponent(kv[1]);
   }
-  return{page:page,slug:params.slug||null};
+  return{page:page,slug:params.slug||null,params:params};
 }
+/* ═══ COLLECTION VIEW ═══ */
+function goCollection(slug){
+  location.hash='catalog-films&collection='+encodeURIComponent(slug);
+}
+function showCollection(slug){
+  var page=document.getElementById('page-catalog-films');
+  var title=page.querySelector('.pg-title');
+  var subtitle=page.querySelector('.pg-subtitle');
+  var filters=page.querySelector('.cat-filters');
+  var grid=document.getElementById('cat-films');
+  // Hide filters, show loading
+  filters.style.display='none';
+  subtitle.textContent='';
+  title.textContent='Загрузка...';
+  grid.innerHTML=Array(12).fill(0).map(function(){return'<div class="skel-card"><div class="skel skel-poster"></div><div class="skel skel-text w60"></div></div>';}).join('');
+  // Fetch collection data from /api/home
+  var API_BASE=window.MAKONTV_API_URL||'';
+  var lang=localStorage.getItem('makontv_lang')||'ru';
+  fetch(API_BASE+'/api/home?lang='+lang).then(function(r){return r.json();}).then(function(data){
+    var coll=null;
+    (data.collections||[]).forEach(function(c){if(c.slug===slug)coll=c;});
+    if(!coll||!coll.items||!coll.items.length){
+      title.textContent='Коллекция не найдена';
+      grid.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="empty-title">Нет контента</div></div>';
+      return;
+    }
+    title.textContent=coll.title;
+    if(window.renderCards){renderCards('cat-films',coll.items,'');}
+    else{grid.innerHTML=coll.items.map(function(item){
+      var t=item.title||'—';var slug=item.slug||'';var type=item.type||'movie';
+      var poster=item.posterUrl?'<img src="'+item.posterUrl+'" alt="'+t+'" style="width:100%;height:100%;object-fit:cover;border-radius:var(--r12)">':'<div class="pc-poster"></div>';
+      var clickPage=type==='series'?'series-detail':'detail';
+      return'<div class="pc" onclick="MakonAPI.goDetail(\''+clickPage+'\',\''+slug+'\')"><div class="pc-img">'+poster+'<div class="pc-ov"><div class="play-c">'+IC.play+'</div></div></div><div class="pc-info"><div class="pc-title">'+t+'</div></div></div>';
+    }).join('');}
+  }).catch(function(){
+    title.textContent='Ошибка загрузки';
+    grid.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="empty-title">Не удалось загрузить</div></div>';
+  });
+}
+function restoreCatalogFilms(){
+  var page=document.getElementById('page-catalog-films');
+  var title=page.querySelector('.pg-title');
+  var subtitle=page.querySelector('.pg-subtitle');
+  var filters=page.querySelector('.cat-filters');
+  title.textContent='Фильмы';
+  subtitle.textContent='Лучшие фильмы в HD и 4K качестве';
+  filters.style.display='';
+  if(window.MakonAPI&&window.MakonAPI.reloadCatalog){MakonAPI.reloadCatalog();}
+  else{buildCatalogs();}
+}
+
 var _navLock=false;
 function navigateFromHash(){
   if(_navLock)return;
@@ -1798,7 +1856,14 @@ function navigateFromHash(){
       go(h.page);
       window._pendingDetail={page:h.page,slug:h.slug};
     }
+  } else if(h.page==='catalog-films'&&h.params&&h.params.collection){
+    go('catalog-films');
+    showCollection(h.params.collection);
   } else {
+    if(h.page==='catalog-films'&&window._collectionActive){
+      window._collectionActive=false;
+      restoreCatalogFilms();
+    }
     go(h.page);
   }
   _navLock=false;

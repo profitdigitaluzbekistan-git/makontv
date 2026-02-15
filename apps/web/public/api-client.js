@@ -97,7 +97,7 @@
       var visibleCollections = (data.collections || []).filter(coll => coll.items && coll.items.length > 0);
       visibleCollections.forEach(coll => {
         const carId = 'hc-' + coll.slug.replace(/[^a-z0-9]/g, '');
-        html += mkSec(coll.title, carId);
+        html += mkSec(coll.title, carId, coll.slug);
       });
 
       el.innerHTML = html;
@@ -350,12 +350,34 @@
   // ═══════════════════════════
   window.MakonAPI = window.MakonAPI || {};
 
+  function showDetailOverlay(pageId) {
+    var page = document.getElementById(pageId);
+    if (!page) return;
+    // Remove existing overlay
+    var old = page.querySelector('.detail-overlay');
+    if (old) old.remove();
+    var ov = document.createElement('div');
+    ov.className = 'detail-overlay';
+    ov.innerHTML = '<div class="detail-spinner"></div>';
+    page.appendChild(ov);
+  }
+  function hideDetailOverlay(pageId) {
+    var page = document.getElementById(pageId);
+    if (!page) return;
+    var ov = page.querySelector('.detail-overlay');
+    if (ov) ov.remove();
+  }
+
   MakonAPI.goDetail = function(page, slug) {
     if (!slug) { go(page); return; }
 
     // Store slug for the page — go() will include it in the hash
     window._currentSlug = slug;
     window._currentPage = page;
+
+    // Show overlay BEFORE showing the page
+    var pageId = 'page-' + page;
+    showDetailOverlay(pageId);
 
     // Show page (go() sets hash with slug)
     go(page);
@@ -463,8 +485,10 @@
       window._currentSeries = null;
       _loadReviews();
       if (window.updateMeta) updateMeta(movie.title, movie.shortDesc || movie.description, movie.posterUrl || movie.backdropUrl);
+      hideDetailOverlay('page-detail');
     }).catch(err => {
       console.warn('Failed to load movie detail:', err.message);
+      hideDetailOverlay('page-detail');
     });
   }
 
@@ -556,8 +580,10 @@
 
       _loadReviews();
       if (window.updateMeta) updateMeta(show.title, show.shortDesc || show.description, show.posterUrl || show.backdropUrl);
+      hideDetailOverlay('page-series-detail');
     }).catch(err => {
       console.warn('Failed to load series detail:', err.message);
+      hideDetailOverlay('page-series-detail');
     });
   }
 
@@ -569,7 +595,7 @@
         var label = s.title || ('Сезон ' + s.number);
         var count = s.episodes ? s.episodes.length : 0;
         return '<button class="ep-season-btn' + (i === 0 ? ' active' : '') + '" onclick="MakonAPI.switchSeason(' + i + ')">' +
-          label + '<span class="ep-count">' + count + '</span></button>';
+          label + '</button>';
       }).join('');
     }
 
