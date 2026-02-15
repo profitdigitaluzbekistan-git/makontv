@@ -1027,6 +1027,7 @@
   // ═══════════════════════════
   // Expose globally
   window.MakonAPI = MakonAPI;
+  window.renderCards = renderCards;
 
   // ═══════════════════════════
   // OVERRIDE go() — no longer needed for detail loading since goDetail handles it.
