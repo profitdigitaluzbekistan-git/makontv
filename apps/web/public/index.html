@@ -1406,7 +1406,7 @@ function showLibTab(tab){
   renderLib();
 }
 function renderLib(){
-  const el=document.getElementById('lib-content');
+  var el=document.getElementById('lib-content');
   if(!isAuth){
     el.innerHTML='<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg><div class="empty-title">Войдите, чтобы увидеть избранное</div><div class="empty-desc">Сохраняйте фильмы и сериалы, чтобы смотреть позже</div><button class="btn btn-p" onclick="openAuth()">Войти</button></div>';
     return;
@@ -1417,11 +1417,34 @@ function renderLib(){
       el.innerHTML='<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg><div class="empty-title">Пока пусто</div><div class="empty-desc">Добавляйте фильмы и сериалы в избранное, нажимая на закладку</div><button class="btn btn-p" onclick="go(\'catalog-films\')">Перейти в каталог</button></div>';
       return;
     }
-    // Favs contain movie/series data
-    var items=favs.map(function(f){return f.movie||f.series||f;});
+    // Deduplicate by content id on client side
+    var seen={};
+    var unique=favs.filter(function(f){
+      var key=(f.movie||f.series||f).id||f.favoriteId;
+      if(seen[key])return false;
+      seen[key]=true;
+      return true;
+    });
+    var items=unique.map(function(f){return f.movie||f.series||f;});
+    // Render cards directly with poster support (no dependency on api-client.js)
     el.innerHTML='<div class="catalog-grid" id="lib-grid"></div>';
-    if(window.renderCards) renderCards('lib-grid',items,'');
-    else rPC('lib-grid',items.map(function(i){return i.title||'—'}),'');
+    var grid=document.getElementById('lib-grid');
+    grid.innerHTML=items.map(function(item,i){
+      var title=item.title||item.name||'—';
+      var slug=(item.slug||'').replace(/'/g,"\\'");
+      var type=item.type||'movie';
+      var clickPage=type==='series'?'series-detail':'detail';
+      var poster=item.posterUrl
+        ?'<img src="'+item.posterUrl+'" alt="'+title+'" style="width:100%;height:100%;object-fit:cover;border-radius:inherit" loading="lazy">'
+        :'<div class="pc-poster '+PG(i)+'"></div>';
+      var onclick=window.MakonAPI&&MakonAPI.goDetail
+        ?"MakonAPI.goDetail('"+clickPage+"','"+slug+"')"
+        :"go('"+clickPage+"')";
+      return '<div class="pc" onclick="'+onclick+'" data-slug="'+slug+'" data-type="'+type+'">'
+        +'<div class="pc-img">'+poster+'<div class="pc-ov"><div class="play-c">'+(typeof IC!=="undefined"?IC.play:'&#9654;')+'</div></div></div>'
+        +'<div class="pc-info"><div class="pc-title">'+title+'</div></div>'
+        +'</div>';
+    }).join('');
   }).catch(function(){
     el.innerHTML='<div class="empty"><div class="empty-title">Ошибка загрузки</div></div>';
   });
