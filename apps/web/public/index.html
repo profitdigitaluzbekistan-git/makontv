@@ -614,6 +614,11 @@ a{color:inherit;text-decoration:none}
 .toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%) translateY(20px);padding:var(--sp12) var(--sp24);border-radius:var(--r8);background:var(--bg-el);border:1px solid var(--border);color:var(--t1);font-size:14px;font-weight:var(--fw6);z-index:300;opacity:0;transition:all 300ms cubic-bezier(.4,0,.2,1);pointer-events:none;backdrop-filter:blur(16px);box-shadow:0 8px 32px rgba(0,0,0,.5);display:flex;align-items:center;gap:var(--sp8)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .toast svg{width:18px;height:18px;color:var(--green);flex-shrink:0}
+.toast.error .toast-ok{display:none}.toast.error .toast-err{display:block!important;color:#ef4444}
+.form-input::placeholder{color:var(--t3);opacity:1}
+input[type="date"].form-input{color-scheme:dark}
+input[type="date"].form-input::-webkit-calendar-picker-indicator{filter:invert(0.8);cursor:pointer;opacity:.7;transition:opacity .2s}
+input[type="date"].form-input::-webkit-calendar-picker-indicator:hover{opacity:1}
 
 /* ═══ ANIMATIONS ═══ */
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
@@ -951,7 +956,11 @@ a{color:inherit;text-decoration:none}
       </div>
       <div class="form-group">
         <label class="form-label">Дата рождения</label>
-        <input class="form-input" type="date" value="" id="pBirth">
+        <div style="position:relative">
+          <input class="form-input" type="text" id="pBirthDisplay" placeholder="ДД.ММ.ГГГГ" inputmode="numeric" maxlength="10" autocomplete="off" style="padding-right:44px">
+          <input type="date" id="pBirth" style="position:absolute;top:0;right:0;width:44px;height:100%;opacity:0;cursor:pointer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:rgba(255,255,255,.5);pointer-events:none"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        </div>
       </div>
       <div class="form-group">
         <label class="form-label">Пол</label>
@@ -1384,21 +1393,8 @@ a{color:inherit;text-decoration:none}
   </div>
 </div>
 
-<!-- ═══ PWA INSTALL BANNER ═══ -->
-<div id="pwaBanner" style="display:none;position:fixed;bottom:80px;left:16px;right:16px;z-index:9999;background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow:0 8px 32px rgba(0,0,0,.5)">
-  <div style="display:flex;align-items:center;gap:12px">
-    <img src="/icons/icon-192.png" width="48" height="48" style="border-radius:12px" alt="MakonTV">
-    <div style="flex:1">
-      <div style="font-weight:700;font-size:15px">Установить MakonTV</div>
-      <div style="font-size:13px;color:var(--t3);margin-top:2px">Быстрый доступ к фильмам и сериалам</div>
-    </div>
-    <button onclick="dismissPWA()" style="background:none;border:none;color:var(--t3);padding:8px;cursor:pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
-  </div>
-  <button id="pwaInstallBtn" onclick="installPWA()" style="width:100%;margin-top:12px;padding:12px;border-radius:var(--r8);background:var(--accent);color:#0A0A0F;border:none;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font)">Установить</button>
-</div>
-
 <!-- ═══ TOAST ═══ -->
-<div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span id="toastMsg"></span></div>
+<div class="toast" id="toast"><svg class="toast-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><svg class="toast-err" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M18 6 6 18"/><path d="M6 6l12 12"/></svg><span id="toastMsg"></span></div>
 
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
@@ -1715,12 +1711,44 @@ document.querySelectorAll('.chip').forEach(c=>{c.addEventListener('click',()=>{c
 document.querySelectorAll('.tab-c').forEach(c=>{c.addEventListener('click',()=>{c.parentElement.querySelectorAll('.tab-c').forEach(x=>x.classList.remove('active'));c.classList.add('active');});});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeAuth();closeSearch();}});
 
+/* ═══ DATE MASK (DD.MM.YYYY) ═══ */
+(function(){
+  var disp=document.getElementById('pBirthDisplay');
+  var real=document.getElementById('pBirth');
+  if(!disp||!real)return;
+  // Mask: auto-insert dots after DD and MM
+  disp.addEventListener('input',function(){
+    var v=this.value.replace(/\D/g,'');
+    if(v.length>8)v=v.slice(0,8);
+    var parts=[];
+    if(v.length>0)parts.push(v.slice(0,2));
+    if(v.length>2)parts.push(v.slice(2,4));
+    if(v.length>4)parts.push(v.slice(4,8));
+    this.value=parts.join('.');
+    // Sync to hidden date input (YYYY-MM-DD)
+    if(v.length===8){
+      var dd=v.slice(0,2),mm=v.slice(2,4),yyyy=v.slice(4,8);
+      real.value=yyyy+'-'+mm+'-'+dd;
+    }
+  });
+  // When native picker changes, update text display
+  real.addEventListener('change',function(){
+    if(!this.value)return;
+    var p=this.value.split('-');// YYYY-MM-DD
+    if(p.length===3)disp.value=p[2]+'.'+p[1]+'.'+p[0];
+  });
+})();
+
 /* ═══ TOAST ═══ */
-function showToast(msg){
+function showToast(msg,type){
   const t=document.getElementById('toast');
   document.getElementById('toastMsg').textContent=msg;
+  var isErr=type==='error'||(!type&&/ошибк|не найден|не удал|заблок/i.test(msg));
+  t.querySelector('.toast-ok').style.display=isErr?'none':'';
+  t.querySelector('.toast-err').style.display=isErr?'':'none';
+  t.classList.toggle('error',isErr);
   t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2500);
+  setTimeout(()=>{t.classList.remove('show','error');},2500);
 }
 
 
@@ -1927,33 +1955,6 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (!refreshing) { refreshing = true; window.location.reload(); }
   });
-}
-
-// ═══ PWA INSTALL PROMPT ═══
-var _deferredPrompt = null;
-window.addEventListener('beforeinstallprompt', function(e) {
-  e.preventDefault();
-  _deferredPrompt = e;
-  // Show banner after 3 seconds if not dismissed before
-  if (!localStorage.getItem('pwa_dismissed')) {
-    setTimeout(function() {
-      var banner = document.getElementById('pwaBanner');
-      if (banner) banner.style.display = 'block';
-    }, 3000);
-  }
-});
-function installPWA() {
-  if (!_deferredPrompt) return;
-  _deferredPrompt.prompt();
-  _deferredPrompt.userChoice.then(function(choice) {
-    if (choice.outcome === 'accepted') showToast('Приложение установлено!');
-    document.getElementById('pwaBanner').style.display = 'none';
-    _deferredPrompt = null;
-  });
-}
-function dismissPWA() {
-  document.getElementById('pwaBanner').style.display = 'none';
-  localStorage.setItem('pwa_dismissed', '1');
 }
 
 // ═══ SEO META TAGS ═══

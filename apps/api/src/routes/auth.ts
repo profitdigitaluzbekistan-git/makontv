@@ -6,6 +6,7 @@
  * POST /api/auth/refresh     — обновить access token
  * GET  /api/auth/me          — текущий пользователь
  * POST /api/auth/password    — сменить пароль
+ * POST /api/auth/avatar      — загрузить аватар
  * POST /api/auth/logout      — выход (клиентский)
  */
 import { Hono } from 'hono';
@@ -15,6 +16,7 @@ import {
   hashPassword, verifyPassword,
   generateTokenPair, verifyRefreshToken,
   generateReferralCode,
+  uploadFile,
 } from '@makontv/shared';
 import { getDb } from '../db';
 import { authRequired } from '../middleware/auth';
@@ -381,6 +383,38 @@ auth.put('/profile', authRequired, async (c) => {
       subscriptionStatus: updated.subscriptionStatus,
     },
   });
+});
+
+// ═══ UPLOAD AVATAR ═══
+auth.post('/avatar', authRequired, async (c) => {
+  const db = getDb();
+  const userId = c.get('userId');
+
+  try {
+    const formData = await c.req.formData();
+    const file = formData.get('file') as File;
+    if (!file) return c.json({ error: 'Файл не выбран' }, 400);
+
+    if (!file.type.startsWith('image/')) {
+      return c.json({ error: 'Только изображения (JPG, PNG)' }, 400);
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      return c.json({ error: 'Максимальный размер 5 МБ' }, 400);
+    }
+
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const result = await uploadFile('avatars', file.name, buffer, file.type, file.size);
+
+    await db.update(users).set({ avatarUrl: result.publicUrl })
+      .where(eq(users.id, userId));
+
+    return c.json({ ok: true, avatarUrl: result.publicUrl });
+  } catch (err: any) {
+    if (err.message?.includes('S3_ENDPOINT')) {
+      return c.json({ error: 'Хранилище не настроено' }, 503);
+    }
+    return c.json({ error: 'Ошибка загрузки: ' + (err?.message || String(err)) }, 500);
+  }
 });
 
 // ═══ LOGOUT (informational — client clears tokens) ═══

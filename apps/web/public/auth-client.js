@@ -386,17 +386,33 @@
     var pSurname = document.getElementById('pSurname');
     var pEmail = document.getElementById('pEmail');
     var pPhone = document.getElementById('pPhone');
+    var pBirth = document.getElementById('pBirth');
     var personalAvatar = document.getElementById('personalAvatar');
     if (pName) pName.value = nameParts[0] || '';
     if (pSurname) pSurname.value = nameParts.slice(1).join(' ') || '';
     if (pEmail) pEmail.value = user.email || '';
     if (pPhone) pPhone.value = user.phone || '';
+    if (pBirth && user.birthDate) {
+      pBirth.value = user.birthDate;
+      var pBirthDisplay = document.getElementById('pBirthDisplay');
+      if (pBirthDisplay) { var dp = user.birthDate.split('-'); if (dp.length === 3) pBirthDisplay.value = dp[2] + '.' + dp[1] + '.' + dp[0]; }
+    }
     if (personalAvatar) {
       if (user.avatarUrl) {
         personalAvatar.innerHTML = '<img src="' + user.avatarUrl + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
       } else {
         personalAvatar.textContent = getUserInitial(user);
       }
+    }
+
+    // Gender chips
+    if (user.gender) {
+      var genderMap = { 'male': 'Мужской', 'female': 'Женский' };
+      var genderText = genderMap[user.gender] || 'Не указан';
+      var genderChips = document.querySelectorAll('#page-personal .chip');
+      genderChips.forEach(function(c) {
+        c.classList.toggle('active', c.textContent.trim() === genderText);
+      });
     }
 
     // Update isSub/isAuth flags without calling setS (avoid loop)
@@ -406,7 +422,7 @@
 
   function loadProfileData() {
     // Fetch fresh user data from /api/auth/me
-    authFetch(API + '/api/auth/me').then(function(r) {
+    authFetch('/api/auth/me').then(function(r) {
       if (!r.ok) return null;
       return r.json();
     }).then(function(user) {
@@ -437,7 +453,11 @@
 
       // Birth date
       var pBirth = document.getElementById('pBirth');
-      if (pBirth && user.birthDate) pBirth.value = user.birthDate;
+      if (pBirth && user.birthDate) {
+        pBirth.value = user.birthDate;
+        var pBirthDisplay = document.getElementById('pBirthDisplay');
+        if (pBirthDisplay) { var dp = user.birthDate.split('-'); if (dp.length === 3) pBirthDisplay.value = dp[2] + '.' + dp[1] + '.' + dp[0]; }
+      }
 
     }).catch(function(err) {
       console.warn('Failed to load profile:', err.message);
@@ -454,15 +474,21 @@
     var lastName = pSurname ? pSurname.value.trim() : '';
     var fullName = [firstName, lastName].filter(Boolean).join(' ');
 
-    if (!fullName) { showToast('Введите имя'); return; }
+    if (!fullName) { showToast('Введите имя', 'error'); return; }
+
+    // Get selected gender
+    var genderChip = document.querySelector('#page-personal .chip.active');
+    var genderMap = { 'Мужской': 'male', 'Женский': 'female', 'Не указан': null };
+    var gender = genderChip ? (genderMap[genderChip.textContent.trim()] || null) : undefined;
 
     try {
-      var res = await authFetch(API + '/api/auth/profile', {
+      var res = await authFetch('/api/auth/profile', {
         method: 'PUT',
         body: JSON.stringify({
           name: fullName,
-          phone: pPhone ? pPhone.value.trim() : undefined,
-          birthDate: pBirth ? pBirth.value || undefined : undefined,
+          phone: pPhone ? pPhone.value.trim() || null : undefined,
+          birthDate: pBirth ? pBirth.value || null : undefined,
+          gender: gender,
         }),
       });
       var data = await res.json();
@@ -476,10 +502,10 @@
         }
         showToast('Данные сохранены');
       } else {
-        showToast(data.error || 'Ошибка сохранения');
+        showToast(data.error || 'Ошибка сохранения', 'error');
       }
     } catch (e) {
-      showToast('Ошибка сети');
+      showToast('Ошибка сети', 'error');
     }
   };
 
@@ -487,41 +513,29 @@
   MakonAPI.uploadAvatar = async function(fileInput) {
     var file = fileInput && fileInput.files && fileInput.files[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { showToast('Файл слишком большой (макс. 5 МБ)'); return; }
+    if (file.size > 5 * 1024 * 1024) { showToast('Файл слишком большой (макс. 5 МБ)', 'error'); return; }
 
     showToast('Загрузка фото...');
     try {
-      // Upload via admin upload endpoint with auth token
       var formData = new FormData();
       formData.append('file', file);
-      formData.append('folder', 'avatars');
 
       var token = getToken();
-      var res = await fetch(API + '/admin/upload', {
+      var res = await fetch(API + '/api/auth/avatar', {
         method: 'POST',
         headers: token ? { 'Authorization': 'Bearer ' + token } : {},
         body: formData,
       });
       var data = await res.json();
-      if (data.success && data.publicUrl) {
-        // Save avatar URL to profile
-        var res2 = await authFetch(API + '/api/auth/profile', {
-          method: 'PUT',
-          body: JSON.stringify({ avatarUrl: data.publicUrl }),
-        });
-        var data2 = await res2.json();
-        if (data2.ok) {
-          var user = getUser();
-          if (user) { user.avatarUrl = data.publicUrl; setUser(user); updateUIForUser(user); }
-          showToast('Фото обновлено');
-        } else {
-          showToast(data2.error || 'Ошибка сохранения');
-        }
+      if (data.ok && data.avatarUrl) {
+        var user = getUser();
+        if (user) { user.avatarUrl = data.avatarUrl; setUser(user); updateUIForUser(user); }
+        showToast('Фото обновлено');
       } else {
-        showToast(data.error || 'Ошибка загрузки');
+        showToast(data.error || 'Ошибка загрузки', 'error');
       }
     } catch (e) {
-      showToast('Ошибка загрузки файла');
+      showToast('Ошибка загрузки файла', 'error');
     }
     fileInput.value = '';
   };

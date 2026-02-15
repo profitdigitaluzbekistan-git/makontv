@@ -45347,6 +45347,30 @@ auth.put("/profile", authRequired, async (c4) => {
     }
   });
 });
+auth.post("/avatar", authRequired, async (c4) => {
+  const db = getDb();
+  const userId = c4.get("userId");
+  try {
+    const formData = await c4.req.formData();
+    const file = formData.get("file");
+    if (!file) return c4.json({ error: "\u0424\u0430\u0439\u043B \u043D\u0435 \u0432\u044B\u0431\u0440\u0430\u043D" }, 400);
+    if (!file.type.startsWith("image/")) {
+      return c4.json({ error: "\u0422\u043E\u043B\u044C\u043A\u043E \u0438\u0437\u043E\u0431\u0440\u0430\u0436\u0435\u043D\u0438\u044F (JPG, PNG)" }, 400);
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      return c4.json({ error: "\u041C\u0430\u043A\u0441\u0438\u043C\u0430\u043B\u044C\u043D\u044B\u0439 \u0440\u0430\u0437\u043C\u0435\u0440 5 \u041C\u0411" }, 400);
+    }
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const result = await uploadFile("avatars", file.name, buffer, file.type, file.size);
+    await db.update(users).set({ avatarUrl: result.publicUrl }).where(eq2(users.id, userId));
+    return c4.json({ ok: true, avatarUrl: result.publicUrl });
+  } catch (err) {
+    if (err.message?.includes("S3_ENDPOINT")) {
+      return c4.json({ error: "\u0425\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0435 \u043D\u0435 \u043D\u0430\u0441\u0442\u0440\u043E\u0435\u043D\u043E" }, 503);
+    }
+    return c4.json({ error: "\u041E\u0448\u0438\u0431\u043A\u0430 \u0437\u0430\u0433\u0440\u0443\u0437\u043A\u0438: " + (err?.message || String(err)) }, 500);
+  }
+});
 auth.post("/logout", (c4) => {
   return c4.json({ ok: true, message: "\u0423\u0434\u0430\u043B\u0438\u0442\u0435 \u0442\u043E\u043A\u0435\u043D\u044B \u043D\u0430 \u043A\u043B\u0438\u0435\u043D\u0442\u0435" });
 });
