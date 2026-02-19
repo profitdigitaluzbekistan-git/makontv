@@ -1,8 +1,7 @@
 /**
- * Custom Refine data provider that wraps simple-rest
- * and injects X-Admin-Secret header into all requests.
+ * Custom Refine data provider for MakonTV admin panel.
+ * All requests include X-Admin-Secret header.
  */
-import simpleRestDataProvider from '@refinedev/simple-rest';
 import type { DataProvider } from '@refinedev/core';
 
 const API_URL = (import.meta.env.VITE_API_URL || '') + '/admin';
@@ -30,9 +29,6 @@ const customFetch: typeof fetch = async (url, options = {}) => {
 };
 
 export const dataProvider: DataProvider = {
-  ...simpleRestDataProvider(API_URL, customFetch),
-
-  // Override getList to handle x-total-count header
   getList: async ({ resource, pagination, sorters, filters }) => {
     const { current = 1, pageSize = 25 } = pagination || {};
     const params = new URLSearchParams();
@@ -61,7 +57,6 @@ export const dataProvider: DataProvider = {
     return { data: Array.isArray(data) ? data : [], total: total || (Array.isArray(data) ? data.length : 0) };
   },
 
-  // Override getOne
   getOne: async ({ resource, id }) => {
     const url = `${API_URL}/${resource}/${id}`;
     const headers = new Headers();
@@ -83,7 +78,6 @@ export const dataProvider: DataProvider = {
     return { data };
   },
 
-  // Override create
   create: async ({ resource, variables }) => {
     const url = `${API_URL}/${resource}`;
     const response = await customFetch(url, {
@@ -94,7 +88,6 @@ export const dataProvider: DataProvider = {
     return { data };
   },
 
-  // Override update
   update: async ({ resource, id, variables }) => {
     const url = `${API_URL}/${resource}/${id}`;
     const response = await customFetch(url, {
@@ -105,12 +98,20 @@ export const dataProvider: DataProvider = {
     return { data };
   },
 
-  // Override deleteOne
   deleteOne: async ({ resource, id }) => {
     const url = `${API_URL}/${resource}/${id}`;
     const response = await customFetch(url, { method: 'DELETE' });
     const data = await response.json().catch(() => ({ id }));
     return { data };
+  },
+
+  getMany: async ({ resource, ids }) => {
+    const params = new URLSearchParams();
+    ids.forEach(id => params.append('id', String(id)));
+    const url = `${API_URL}/${resource}?${params.toString()}`;
+    const response = await customFetch(url);
+    const data = await response.json();
+    return { data: Array.isArray(data) ? data : [] };
   },
 
   getApiUrl: () => API_URL,

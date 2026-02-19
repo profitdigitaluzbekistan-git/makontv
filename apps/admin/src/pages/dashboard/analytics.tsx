@@ -12,8 +12,10 @@ import { getAdminSecret } from '../../providers/dataProvider';
 
 const { Title, Text } = Typography;
 
+const API_URL = import.meta.env.VITE_API_URL || '';
+
 async function fetchAnalytics(endpoint: string) {
-  const res = await fetch(`/admin/analytics/${endpoint}`, {
+  const res = await fetch(`${API_URL}/admin/analytics/${endpoint}`, {
     headers: { 'X-Admin-Secret': getAdminSecret() },
   });
   return res.json();

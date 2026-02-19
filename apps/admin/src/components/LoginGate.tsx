@@ -1,10 +1,10 @@
 /**
  * Simple admin login gate.
  * Asks for ADMIN_SECRET, stores in localStorage.
- * Replaced by real auth on Этап 8.
+ * Verifies stored secret on each page load.
  */
-import React, { useState } from 'react';
-import { Card, Input, Button, Typography, Space, Alert } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Card, Input, Button, Typography, Space, Alert, Spin } from 'antd';
 import { LockOutlined } from '@ant-design/icons';
 import { setAdminSecret, getAdminSecret } from '../providers/dataProvider';
 
@@ -13,14 +13,52 @@ const { Title, Text } = Typography;
 export const LoginGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [secret, setSecret] = useState('');
   const [error, setError] = useState(false);
-  const existing = getAdminSecret();
+  const [verified, setVerified] = useState(false);
+  const [checking, setChecking] = useState(true);
 
-  if (existing) {
+  // Verify stored secret on mount
+  useEffect(() => {
+    const stored = getAdminSecret();
+    if (!stored) {
+      setChecking(false);
+      return;
+    }
+    const apiBase = import.meta.env.VITE_API_URL || '';
+    fetch(`${apiBase}/admin/stats`, {
+      headers: { 'X-Admin-Secret': stored },
+    })
+      .then((res) => {
+        if (res.ok) {
+          setVerified(true);
+        } else {
+          // Stored secret is invalid — clear it
+          localStorage.removeItem('makontv_admin_secret');
+        }
+        setChecking(false);
+      })
+      .catch(() => {
+        // Network error — allow through with stored secret (offline support)
+        setVerified(true);
+        setChecking(false);
+      });
+  }, []);
+
+  if (checking) {
+    return (
+      <div style={{
+        display: 'flex', justifyContent: 'center', alignItems: 'center',
+        minHeight: '100vh', background: '#0a0a14',
+      }}>
+        <Spin size="large" />
+      </div>
+    );
+  }
+
+  if (verified) {
     return <>{children}</>;
   }
 
   const handleLogin = async () => {
-    // Test the secret against API
     try {
       const apiBase = import.meta.env.VITE_API_URL || '';
       const res = await fetch(`${apiBase}/admin/stats`, {

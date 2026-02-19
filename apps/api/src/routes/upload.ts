@@ -1,146 +1,237 @@
 /**
- * Upload API — file upload for admin panel
+ * Upload API — Bunny Storage (images) + Bunny Stream (video)
  *
- * POST /admin/upload              — direct upload (multipart form)
- * POST /admin/upload/presign      — get presigned URL for client-side upload
- * DELETE /admin/upload/:key       — delete a file
- * GET /admin/upload/list/:folder  — list files in folder
+ * POST /admin/upload/sign          — get signed URL for direct browser→Bunny Storage upload
+ * DELETE /admin/upload/:folder/:filename — delete image from Bunny Storage
+ * POST /admin/upload/video/create  — create video in Bunny Stream (returns direct upload URL)
+ * GET  /admin/upload/video/:videoId — get video status from Bunny Stream
+ * DELETE /admin/upload/video/:videoId — delete video from Bunny Stream
  *
  * Protected by admin middleware.
  */
 import { Hono } from 'hono';
-import {
-  uploadFile, deleteFile, getUploadUrl, listFiles,
-  validateUpload, publicUrl, type AssetFolder,
-} from '@makontv/shared';
 import { adminGuard } from '../middleware/admin';
 
 const upload = new Hono();
 upload.use('/*', adminGuard);
 
-// Valid folders
-const VALID_FOLDERS: AssetFolder[] = ['posters', 'backdrops', 'thumbnails', 'avatars', 'videos', 'trailers'];
+// ═══════════════════════════════════════
+// BUNNY STORAGE (images)
+// ═══════════════════════════════════════
 
-function isValidFolder(f: string): f is AssetFolder {
-  return VALID_FOLDERS.includes(f as AssetFolder);
+const IMAGE_FOLDERS = ['posters', 'backdrops', 'thumbnails', 'avatars', 'banners'];
+
+function getBunnyStorageConfig() {
+  const zone = process.env.BUNNY_STORAGE_ZONE;
+  const apiKey = process.env.BUNNY_STORAGE_API_KEY;
+  const cdnHost = process.env.BUNNY_STORAGE_CDN_HOST;
+
+  if (!zone || !apiKey || !cdnHost) {
+    throw new Error('Bunny Storage не настроен. Установите BUNNY_STORAGE_ZONE, BUNNY_STORAGE_API_KEY, BUNNY_STORAGE_CDN_HOST');
+  }
+  return { zone, apiKey, cdnHost };
 }
 
-// ═══ DIRECT UPLOAD ═══
-// Used by admin panel for images (small files)
-upload.post('/', async (c) => {
-  try {
-    const formData = await c.req.formData();
-    const file = formData.get('file') as File;
-    const folder = (formData.get('folder') as string) || 'posters';
+function getExtFromType(contentType: string): string {
+  const map: Record<string, string> = {
+    'image/jpeg': 'jpg', 'image/png': 'png',
+    'image/webp': 'webp', 'image/avif': 'avif',
+  };
+  return map[contentType] || 'jpg';
+}
 
-    if (!file) return c.json({ error: 'No file provided' }, 400);
-    if (!isValidFolder(folder)) return c.json({ error: `Invalid folder. Use: ${VALID_FOLDERS.join(', ')}` }, 400);
+async function uploadToBunnyStorage(
+  buffer: Buffer,
+  contentType: string,
+  folder: string,
+  filenameHint?: string,
+): Promise<{ url: string; path: string }> {
+  const { zone, apiKey, cdnHost } = getBunnyStorageConfig();
 
-    // Validate
-    const err = validateUpload(file.type, file.size, folder);
-    if (err) return c.json({ error: err }, 400);
+  const ext = getExtFromType(contentType);
+  const uniqueName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const filePath = `${folder}/${filenameHint ? filenameHint + '_' : ''}${uniqueName}`;
 
-    // Upload
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const result = await uploadFile(folder, file.name, buffer, file.type, file.size);
+  const res = await fetch(`https://storage.bunnycdn.com/${zone}/${filePath}`, {
+    method: 'PUT',
+    headers: {
+      'AccessKey': apiKey,
+      'Content-Type': 'application/octet-stream',
+    },
+    body: buffer,
+  });
 
-    return c.json({
-      success: true,
-      ...result,
-    }, 201);
-  } catch (err: any) {
-    // If S3 not configured, return helpful error
-    if (err.message?.includes('S3_ENDPOINT')) {
-      return c.json({
-        error: 'Storage not configured',
-        hint: 'Set S3_ENDPOINT, S3_ACCESS_KEY, S3_SECRET_KEY, S3_BUCKET, S3_PUBLIC_URL in .env',
-        docs: 'See README for Cloudflare R2 setup instructions',
-      }, 503);
-    }
-    return c.json({ error: err.message }, 500);
+  if (!res.ok) {
+    const errBody = await res.text();
+    throw new Error('Bunny Storage error: ' + errBody);
   }
-});
 
-// ═══ PRESIGNED UPLOAD URL ═══
-// Used for large files (videos) — client uploads directly to R2
-upload.post('/presign', async (c) => {
+  const url = `https://${cdnHost}/${filePath}`;
+  return { url, path: filePath };
+}
+
+// ═══ SIGN URL for direct browser upload to Bunny Storage ═══
+upload.post('/sign', async (c) => {
   try {
-    const body = await c.req.json<{
-      filename: string;
-      contentType: string;
-      folder: AssetFolder;
-      size?: number;
-    }>();
+    const { zone, apiKey, cdnHost } = getBunnyStorageConfig();
+    const body = await c.req.json<{ folder?: string; contentType?: string; filename?: string }>();
+    const folder = body.folder || 'posters';
 
-    if (!body.filename || !body.contentType) {
-      return c.json({ error: 'filename and contentType required' }, 400);
-    }
-    if (!isValidFolder(body.folder)) {
-      return c.json({ error: `Invalid folder. Use: ${VALID_FOLDERS.join(', ')}` }, 400);
+    if (!IMAGE_FOLDERS.includes(folder)) {
+      return c.json({ error: `Недопустимая папка. Используйте: ${IMAGE_FOLDERS.join(', ')}` }, 400);
     }
 
-    // Validate
-    if (body.size) {
-      const err = validateUpload(body.contentType, body.size, body.folder);
-      if (err) return c.json({ error: err }, 400);
-    }
-
-    const result = await getUploadUrl(body.folder, body.filename, body.contentType);
+    const ext = getExtFromType(body.contentType || 'image/jpeg');
+    const uniqueName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const filePath = `${folder}/${uniqueName}`;
 
     return c.json({
-      success: true,
-      uploadUrl: result.uploadUrl,   // Client PUTs file here
-      key: result.key,               // Save this in DB
-      publicUrl: result.publicUrl,   // Use this to display
+      uploadUrl: `https://storage.bunnycdn.com/${zone}/${filePath}`,
+      cdnUrl: `https://${cdnHost}/${filePath}`,
+      accessKey: apiKey,
+      path: filePath,
     });
   } catch (err: any) {
-    if (err.message?.includes('S3_ENDPOINT')) {
-      return c.json({
-        error: 'Storage not configured',
-        hint: 'Set S3_ENDPOINT, S3_ACCESS_KEY, S3_SECRET_KEY in .env',
-      }, 503);
-    }
-    return c.json({ error: err.message }, 500);
+    return c.json({ error: err.message || 'Ошибка' }, 500);
   }
 });
 
-// ═══ DELETE FILE ═══
+// ═══ DELETE IMAGE ═══
 upload.delete('/:folder/:filename', async (c) => {
   try {
+    const { zone, apiKey } = getBunnyStorageConfig();
     const folder = c.req.param('folder');
     const filename = c.req.param('filename');
-    const key = `${folder}/${filename}`;
+    const filePath = `${folder}/${filename}`;
 
-    await deleteFile(key);
-    return c.json({ success: true, deleted: key });
+    const res = await fetch(`https://storage.bunnycdn.com/${zone}/${filePath}`, {
+      method: 'DELETE',
+      headers: { 'AccessKey': apiKey },
+    });
+
+    if (!res.ok && res.status !== 404) {
+      const errBody = await res.text();
+      return c.json({ error: 'Delete error: ' + errBody }, 500);
+    }
+
+    return c.json({ success: true, deleted: filePath });
   } catch (err: any) {
     return c.json({ error: err.message }, 500);
   }
 });
 
-// ═══ LIST FILES ═══
-upload.get('/list/:folder', async (c) => {
+// ═══════════════════════════════════════
+// BUNNY STREAM (video)
+// ═══════════════════════════════════════
+
+const BUNNY_VIDEO_API = 'https://video.bunnycdn.com';
+
+function getBunnyStreamConfig() {
+  const libraryId = process.env.BUNNY_LIBRARY_ID;
+  const apiKey = process.env.BUNNY_STREAM_API_KEY;
+  const cdnHost = process.env.BUNNY_STREAM_CDN_HOST;
+
+  if (!libraryId || !apiKey) {
+    throw new Error('Bunny Stream не настроен. Установите BUNNY_LIBRARY_ID, BUNNY_STREAM_API_KEY, BUNNY_STREAM_CDN_HOST');
+  }
+  return { libraryId, apiKey, cdnHost };
+}
+
+// ═══ CREATE VIDEO (returns direct upload URL for browser→Bunny Stream) ═══
+upload.post('/video/create', async (c) => {
   try {
-    const folder = c.req.param('folder');
-    if (!isValidFolder(folder)) {
-      return c.json({ error: 'Invalid folder' }, 400);
+    const { libraryId, apiKey } = getBunnyStreamConfig();
+    const body = await c.req.json<{ title: string }>();
+
+    if (!body.title) return c.json({ error: 'title обязателен' }, 400);
+
+    const res = await fetch(`${BUNNY_VIDEO_API}/library/${libraryId}/videos`, {
+      method: 'POST',
+      headers: { 'AccessKey': apiKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: body.title }),
+    });
+
+    if (!res.ok) {
+      const errBody = await res.text();
+      return c.json({ error: 'Bunny Stream error: ' + errBody }, res.status as any);
     }
 
-    const files = await listFiles(folder);
+    const video = await res.json() as { guid: string; title: string; status: number };
     return c.json({
-      folder,
-      files: files.map(key => ({
-        key,
-        url: publicUrl(key),
-      })),
-      count: files.length,
+      success: true,
+      videoId: video.guid,
+      title: video.title,
+      status: video.status,
+      uploadUrl: `${BUNNY_VIDEO_API}/library/${libraryId}/videos/${video.guid}`,
+      accessKey: apiKey,
+    }, 201);
+  } catch (err: any) {
+    return c.json({ error: err.message }, 500);
+  }
+});
+
+// ═══ GET VIDEO STATUS ═══
+upload.get('/video/:videoId', async (c) => {
+  try {
+    const { libraryId, apiKey, cdnHost } = getBunnyStreamConfig();
+    const videoId = c.req.param('videoId');
+
+    const res = await fetch(`${BUNNY_VIDEO_API}/library/${libraryId}/videos/${videoId}`, {
+      headers: { 'AccessKey': apiKey },
+    });
+
+    if (!res.ok) return c.json({ error: 'Video not found' }, 404);
+
+    const video = await res.json() as {
+      guid: string; title: string; status: number;
+      length: number; width: number; height: number;
+      availableResolutions: string;
+    };
+
+    const statusLabels: Record<number, string> = {
+      0: 'created', 1: 'uploaded', 2: 'processing', 3: 'transcoding', 4: 'ready', 5: 'error',
+    };
+
+    return c.json({
+      videoId: video.guid,
+      title: video.title,
+      status: statusLabels[video.status] || 'unknown',
+      statusCode: video.status,
+      duration: video.length,
+      width: video.width,
+      height: video.height,
+      resolutions: video.availableResolutions,
+      hlsUrl: cdnHost ? `https://${cdnHost}/${video.guid}/playlist.m3u8` : null,
+      thumbnailUrl: cdnHost ? `https://${cdnHost}/${video.guid}/thumbnail.jpg` : null,
     });
   } catch (err: any) {
-    if (err.message?.includes('S3_ENDPOINT')) {
-      return c.json({ error: 'Storage not configured' }, 503);
-    }
     return c.json({ error: err.message }, 500);
   }
 });
+
+// ═══ DELETE VIDEO ═══
+upload.delete('/video/:videoId', async (c) => {
+  try {
+    const { libraryId, apiKey } = getBunnyStreamConfig();
+    const videoId = c.req.param('videoId');
+
+    const res = await fetch(`${BUNNY_VIDEO_API}/library/${libraryId}/videos/${videoId}`, {
+      method: 'DELETE',
+      headers: { 'AccessKey': apiKey },
+    });
+
+    if (!res.ok && res.status !== 404) {
+      const errBody = await res.text();
+      return c.json({ error: 'Delete error: ' + errBody }, res.status as any);
+    }
+
+    return c.json({ success: true, deleted: videoId });
+  } catch (err: any) {
+    return c.json({ error: err.message }, 500);
+  }
+});
+
+// ═══ REUSABLE: Upload to Bunny Storage (exported for use in auth.ts) ═══
+export { uploadToBunnyStorage, getBunnyStorageConfig };
 
 export default upload;

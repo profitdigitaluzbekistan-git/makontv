@@ -20,7 +20,8 @@ export const BroadcastPage: React.FC = () => {
       setLoading(true);
       setResult(null);
 
-      const res = await fetch('/api/users/broadcast/notifications', {
+      const apiUrl = import.meta.env.VITE_API_URL || '';
+      const res = await fetch(`${apiUrl}/api/users/broadcast/notifications`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

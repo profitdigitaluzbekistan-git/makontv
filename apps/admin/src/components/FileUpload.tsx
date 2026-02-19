@@ -1,19 +1,14 @@
 /**
- * FileUpload — upload component for admin panel.
+ * FileUpload — direct browser-to-Bunny upload component.
  *
- * Usage in forms:
- *   <Form.Item label="Постер" name="posterUrl">
- *     <FileUpload folder="posters" accept="image/*" />
- *   </Form.Item>
+ * Images: API /admin/upload/sign → direct PUT to Bunny Storage
+ * Video:  API /admin/upload/video/create → direct PUT to Bunny Stream
  *
- * For video:
- *   <Form.Item label="Видео" name="videoUrl">
- *     <FileUpload folder="videos" accept="video/*" presigned />
- *   </Form.Item>
+ * Bypasses Vercel 4.5MB body limit by uploading directly from browser.
  */
-import React, { useState } from 'react';
-import { Upload, Button, Input, Space, Image, Progress, message, Tabs, Typography } from 'antd';
-import { UploadOutlined, LinkOutlined, CloudUploadOutlined } from '@ant-design/icons';
+import React, { useState, useEffect } from 'react';
+import { Upload, Button, Input, Space, Image, Progress, message, Tabs, Typography, Tag } from 'antd';
+import { UploadOutlined, LinkOutlined, CloudUploadOutlined, PlayCircleOutlined, CheckCircleOutlined, SyncOutlined } from '@ant-design/icons';
 import { getAdminSecret } from '../providers/dataProvider';
 
 const { Text } = Typography;
@@ -24,7 +19,7 @@ interface FileUploadProps {
   onChange?: (url: string) => void;
   folder?: string;
   accept?: string;
-  presigned?: boolean;  // Use presigned URL for large files (videos)
+  videoMode?: boolean;
 }
 
 export const FileUpload: React.FC<FileUploadProps> = ({
@@ -32,93 +27,72 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   onChange,
   folder = 'posters',
   accept = 'image/*',
-  presigned = false,
+  videoMode = false,
 }) => {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [urlInput, setUrlInput] = useState(value || '');
   const [activeTab, setActiveTab] = useState<string>(value?.startsWith('http') ? 'url' : 'upload');
+  const [videoStatus, setVideoStatus] = useState<string | null>(null);
+  const [statusPolling, setStatusPolling] = useState(false);
 
   const isImage = accept.startsWith('image');
 
-  // Direct upload (images, small files)
-  const handleDirectUpload = async (file: File) => {
-    setUploading(true);
-    setProgress(0);
-
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('folder', folder);
-
-      const res = await fetch(`${API_BASE}/admin/upload`, {
-        method: 'POST',
-        headers: { 'X-Admin-Secret': getAdminSecret() },
-        body: formData,
-      });
-
-      const data = await res.json();
-      if (res.ok && data.url) {
-        onChange?.(data.url);
-        setUrlInput(data.url);
-        message.success('Файл загружен');
-      } else {
-        const errMsg = data.error || 'Ошибка загрузки';
-        if (errMsg.includes('not configured') || errMsg.includes('S3') || errMsg.includes('R2') || res.status === 501 || res.status === 503) {
-          message.warning('Хранилище не настроено. Используйте вкладку «URL» для вставки ссылки.');
-          setActiveTab('url');
+  // Poll Bunny video status after upload
+  useEffect(() => {
+    if (!statusPolling || !value) return;
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`${API_BASE}/admin/upload/video/${value}`, {
+          headers: { 'X-Admin-Secret': getAdminSecret() },
+        });
+        const data = await res.json();
+        if (data.status === 'ready') {
+          setVideoStatus('ready');
+          setStatusPolling(false);
+          message.success('Видео готово к воспроизведению');
+        } else if (data.status === 'error') {
+          setVideoStatus('error');
+          setStatusPolling(false);
+          message.error('Ошибка обработки видео');
         } else {
-          message.error(errMsg);
+          setVideoStatus(data.status);
         }
+      } catch {
+        // ignore polling errors
       }
-    } catch (err: any) {
-      message.error('Хранилище не настроено или недоступно. Используйте вкладку «URL».');
-      setActiveTab('url');
-    } finally {
-      setUploading(false);
-      setProgress(0);
-    }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [statusPolling, value]);
 
-    return false; // prevent default antd upload
-  };
-
-  // Presigned upload (videos, large files)
-  const handlePresignedUpload = async (file: File) => {
+  // Image upload: get signed URL from API, then PUT directly to Bunny Storage
+  const handleImageUpload = async (file: File) => {
     setUploading(true);
     setProgress(0);
 
     try {
-      // 1. Get presigned URL
-      const presignRes = await fetch(`${API_BASE}/admin/upload/presign`, {
+      // Step 1: Get signed upload URL from API (small JSON request, no file body)
+      const signRes = await fetch(`${API_BASE}/admin/upload/sign`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-Admin-Secret': getAdminSecret(),
         },
-        body: JSON.stringify({
-          filename: file.name,
-          contentType: file.type,
-          folder,
-          size: file.size,
-        }),
+        body: JSON.stringify({ folder, contentType: file.type, filename: file.name }),
       });
 
-      const presignData = await presignRes.json();
-      if (!presignRes.ok) {
-        const errMsg = presignData.error || 'Не удалось получить URL для загрузки';
-        if (errMsg.includes('not configured') || errMsg.includes('S3') || errMsg.includes('R2') || presignRes.status === 501 || presignRes.status === 503) {
-          message.warning('Хранилище не настроено. Используйте вкладку «URL» для вставки ссылки.');
-          setActiveTab('url');
-        } else {
-          message.error(errMsg);
-        }
-        return false;
+      if (!signRes.ok) {
+        const err = await signRes.json().catch(() => ({ error: `HTTP ${signRes.status}` }));
+        throw new Error(err.error || 'Не удалось получить URL для загрузки');
       }
 
-      // 2. Upload directly to S3/R2
+      const { uploadUrl, cdnUrl, accessKey } = await signRes.json();
+
+      // Step 2: Upload file directly to Bunny Storage (browser → Bunny, bypasses Vercel)
       const xhr = new XMLHttpRequest();
-      xhr.open('PUT', presignData.uploadUrl);
-      xhr.setRequestHeader('Content-Type', file.type);
+      xhr.open('PUT', uploadUrl);
+      xhr.setRequestHeader('AccessKey', accessKey);
+      xhr.setRequestHeader('Content-Type', 'application/octet-stream');
 
       xhr.upload.onprogress = (e) => {
         if (e.lengthComputable) {
@@ -129,22 +103,87 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       await new Promise<void>((resolve, reject) => {
         xhr.onload = () => {
           if (xhr.status >= 200 && xhr.status < 300) {
-            onChange?.(presignData.publicUrl);
-            setUrlInput(presignData.publicUrl);
-            message.success('Видео загружено');
             resolve();
           } else {
-            reject(new Error(`Upload failed: ${xhr.statusText}`));
+            reject(new Error(`Upload failed: ${xhr.status} ${xhr.statusText}`));
+          }
+        };
+        xhr.onerror = () => reject(new Error('Network error'));
+        xhr.send(file);
+      });
+
+      onChange?.(cdnUrl);
+      setUrlInput(cdnUrl);
+      message.success('Изображение загружено');
+    } catch (err: any) {
+      message.error('Ошибка: ' + (err.message || 'Загрузка не удалась'));
+    } finally {
+      setUploading(false);
+      setTimeout(() => setProgress(0), 500);
+    }
+
+    return false;
+  };
+
+  // Video upload: create video via API, then PUT directly to Bunny Stream
+  const handleVideoUpload = async (file: File) => {
+    setUploading(true);
+    setProgress(0);
+
+    try {
+      // Step 1: Create video in Bunny Stream via API (small JSON request)
+      message.info('Создание видео...');
+      const createRes = await fetch(`${API_BASE}/admin/upload/video/create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Admin-Secret': getAdminSecret(),
+        },
+        body: JSON.stringify({ title: file.name.replace(/\.[^.]+$/, '') }),
+      });
+
+      const createData = await createRes.json();
+      if (!createRes.ok) {
+        message.error(createData.error || 'Не удалось создать видео');
+        return false;
+      }
+
+      const { videoId, uploadUrl, accessKey } = createData;
+
+      // Step 2: Upload video directly to Bunny Stream (browser → Bunny, bypasses Vercel)
+      message.info('Загрузка видео...');
+      const xhr = new XMLHttpRequest();
+      xhr.open('PUT', uploadUrl);
+      xhr.setRequestHeader('AccessKey', accessKey);
+      xhr.setRequestHeader('Content-Type', 'application/octet-stream');
+
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+          setProgress(Math.round((e.loaded / e.total) * 100));
+        }
+      };
+
+      await new Promise<void>((resolve, reject) => {
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            onChange?.(videoId);
+            setUrlInput(videoId);
+            setVideoStatus('processing');
+            setStatusPolling(true);
+            message.success('Видео загружено, идёт обработка...');
+            resolve();
+          } else {
+            reject(new Error(`Upload failed: ${xhr.status} ${xhr.statusText}`));
           }
         };
         xhr.onerror = () => reject(new Error('Network error'));
         xhr.send(file);
       });
     } catch (err: any) {
-      message.error(`Ошибка: ${err.message}`);
+      message.error('Ошибка: ' + (err.message || 'Загрузка не удалась'));
     } finally {
       setUploading(false);
-      setProgress(0);
+      setTimeout(() => setProgress(0), 500);
     }
 
     return false;
@@ -156,6 +195,16 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     onChange?.(url);
   };
 
+  const videoStatusTag = videoStatus ? (
+    <div style={{ marginTop: 8 }}>
+      {videoStatus === 'ready' && <Tag icon={<CheckCircleOutlined />} color="success">Готово к воспроизведению</Tag>}
+      {videoStatus === 'processing' && <Tag icon={<SyncOutlined spin />} color="processing">Обработка...</Tag>}
+      {videoStatus === 'transcoding' && <Tag icon={<SyncOutlined spin />} color="processing">Транскодирование...</Tag>}
+      {videoStatus === 'uploaded' && <Tag icon={<SyncOutlined spin />} color="processing">Загружено, ожидание обработки...</Tag>}
+      {videoStatus === 'error' && <Tag color="error">Ошибка обработки</Tag>}
+    </div>
+  ) : null;
+
   const items = [
     {
       key: 'upload',
@@ -163,25 +212,29 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       children: (
         <div>
           <Upload
-            beforeUpload={presigned ? handlePresignedUpload : handleDirectUpload}
+            beforeUpload={videoMode ? handleVideoUpload : handleImageUpload}
+            customRequest={() => {}}
             showUploadList={false}
             accept={accept}
             maxCount={1}
           >
             <Button icon={<UploadOutlined />} loading={uploading} block>
-              {uploading ? 'Загрузка...' : `Выбрать ${isImage ? 'изображение' : 'файл'}`}
+              {uploading ? 'Загрузка...' : `Выбрать ${isImage ? 'изображение' : 'видео'}`}
             </Button>
           </Upload>
           {uploading && <Progress percent={progress} size="small" style={{ marginTop: 8 }} />}
-          {value && isImage && (
+          {value && isImage && !videoMode && (
             <div style={{ marginTop: 8 }}>
               <Image src={value} width={120} height={80} style={{ objectFit: 'cover', borderRadius: 4 }} />
             </div>
           )}
-          {value && !isImage && (
-            <Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: 'block' }}>
-              ✅ {value.split('/').pop()}
-            </Text>
+          {value && videoMode && (
+            <div style={{ marginTop: 8 }}>
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                <PlayCircleOutlined /> Video ID: {value}
+              </Text>
+              {videoStatusTag}
+            </div>
           )}
         </div>
       ),
@@ -192,11 +245,11 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       children: (
         <Space direction="vertical" style={{ width: '100%' }}>
           <Input
-            placeholder={isImage ? 'https://example.com/poster.jpg' : 'https://youtube.com/watch?v=... или прямая ссылка'}
+            placeholder={isImage ? 'https://example.com/poster.jpg' : 'https://youtube.com/watch?v=... или .m3u8 ссылка'}
             value={urlInput}
             onChange={(e) => handleUrlChange(e.target.value)}
           />
-          {urlInput && isImage && (
+          {urlInput && isImage && !videoMode && (
             <Image src={urlInput} width={120} height={80} style={{ objectFit: 'cover', borderRadius: 4 }}
               fallback="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjgwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMjAiIGhlaWdodD0iODAiIGZpbGw9IiMzMzMiLz48dGV4dCB4PSI2MCIgeT0iNDAiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIiBmb250LXNpemU9IjEyIj5ObyBpbWFnZTwvdGV4dD48L3N2Zz4=" />
           )}

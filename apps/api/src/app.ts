@@ -5,12 +5,12 @@
  */
 import 'dotenv/config';
 import { Hono } from 'hono';
-import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { authRateLimit, apiRateLimit, searchRateLimit } from './middleware/rateLimit';
 import { getDb } from './db';
-import { genres, notifications, reviews, users, movies, series } from '@makontv/db';
-import { desc, isNull, eq, and, sql } from 'drizzle-orm';
+import { genres, notifications, reviews, users, movies, series, episodes } from '@makontv/db';
+import { desc, isNull, eq, and, or, sql } from 'drizzle-orm';
+import { authRequired, authOptional } from './middleware/auth';
 
 // Routes
 import homeRoute from './routes/home';
@@ -27,16 +27,61 @@ import subscriptionsRoute from './routes/subscriptions';
 import adminRoute from './routes/admin';
 import uploadRoute from './routes/upload';
 import analyticsRoute from './routes/analytics';
+import promoRoute from './routes/promo';
 
 const app = new Hono();
 
+// ═══ CORS ═══
+const ALLOWED_ORIGINS = [
+  'https://makontv-admin-panel.vercel.app',
+  'https://makontv-web.vercel.app',
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://localhost:3001',
+];
+
+function isAllowedOrigin(origin: string | undefined): string | null {
+  if (!origin) return null;
+  if (ALLOWED_ORIGINS.includes(origin)) return origin;
+  if (origin.endsWith('.vercel.app')) return origin;
+  return null;
+}
+
+function setCorsHeaders(c: any, origin: string | undefined) {
+  const allowed = isAllowedOrigin(origin);
+  c.header('Vary', 'Origin');
+  if (allowed) {
+    c.header('Access-Control-Allow-Origin', allowed);
+    c.header('Access-Control-Allow-Credentials', 'true');
+  } else {
+    c.header('Access-Control-Allow-Origin', '*');
+  }
+  c.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Admin-Secret');
+  c.header('Access-Control-Expose-Headers', 'x-total-count');
+}
+
+app.use('/*', async (c, next) => {
+  const origin = c.req.header('Origin');
+
+  // Handle preflight
+  if (c.req.method === 'OPTIONS') {
+    c.status(204);
+    setCorsHeaders(c, origin);
+    c.header('Access-Control-Max-Age', '600');
+    return c.body(null);
+  }
+
+  try {
+    await next();
+  } finally {
+    // Always set CORS headers, even if handler threw
+    setCorsHeaders(c, origin);
+  }
+});
+
 // ═══ MIDDLEWARE ═══
 app.use('/*', logger());
-app.use('/*', cors({
-  origin: (origin) => origin || '*',
-  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'Authorization', 'X-Admin-Secret'],
-}));
 
 // ═══ HEALTH ═══
 app.get('/', (c) => c.json({
@@ -81,6 +126,88 @@ app.get('/api', (c) => c.json({
   i18n: 'Добавьте ?lang=uz к любому GET-запросу для узбекского языка. По умолчанию: ru.',
 }));
 
+// ═══ PUBLIC VIDEO ACCESS (with auth + subscription check) ═══
+app.get('/api/video/:id', authRequired, async (c) => {
+  const db = getDb();
+  const userId = c.get('userId') as string;
+  const contentId = c.req.param('id');
+  const type = c.req.query('type') || 'movie'; // movie or episode
+
+  // Check user subscription status
+  const [user] = await db.select({
+    subscriptionStatus: users.subscriptionStatus,
+    subscriptionExpiresAt: users.subscriptionExpiresAt,
+  }).from(users).where(eq(users.id, userId)).limit(1);
+
+  if (!user) return c.json({ error: 'Пользователь не найден' }, 404);
+
+  let videoUrl: string | null = null;
+  let videoType: string | null = null;
+  let isPremium = false;
+
+  if (type === 'episode') {
+    const [ep] = await db.select({
+      videoUrl: episodes.videoUrl,
+      videoType: episodes.videoType,
+      isFree: episodes.isFree,
+    }).from(episodes).where(eq(episodes.id, contentId)).limit(1);
+    if (!ep) return c.json({ error: 'Эпизод не найден' }, 404);
+    videoUrl = ep.videoUrl;
+    videoType = ep.videoType;
+    isPremium = !ep.isFree;
+  } else {
+    const [movie] = await db.select({
+      videoUrl: movies.videoUrl,
+      videoType: movies.videoType,
+      isPremium: movies.isPremium,
+    }).from(movies).where(eq(movies.id, contentId)).limit(1);
+    if (!movie) return c.json({ error: 'Фильм не найден' }, 404);
+    videoUrl = movie.videoUrl;
+    videoType = movie.videoType;
+    isPremium = movie.isPremium || false;
+  }
+
+  // Premium content check
+  if (isPremium) {
+    const isActive = user.subscriptionStatus === 'active' &&
+      user.subscriptionExpiresAt && new Date(user.subscriptionExpiresAt) > new Date();
+    if (!isActive) {
+      return c.json({
+        error: 'Требуется подписка',
+        code: 'SUBSCRIPTION_REQUIRED',
+        message: 'Оформите подписку для просмотра этого контента',
+      }, 403);
+    }
+  }
+
+  if (!videoUrl) {
+    return c.json({ error: 'Видео недоступно', code: 'NO_VIDEO' }, 404);
+  }
+
+  // If it's a Bunny Stream video ID (UUID format), build HLS URL
+  const cdnHostname = process.env.BUNNY_STREAM_CDN_HOST;
+  if (cdnHostname && videoType === 'bunny') {
+    return c.json({
+      url: `https://${cdnHostname}/${videoUrl}/playlist.m3u8`,
+      type: 'hls',
+      videoId: videoUrl,
+    });
+  }
+
+  // For HLS URLs
+  if (videoType === 'hls' || videoUrl.includes('.m3u8')) {
+    return c.json({ url: videoUrl, type: 'hls' });
+  }
+
+  // For YouTube
+  if (videoType === 'youtube' || videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
+    return c.json({ url: videoUrl, type: 'youtube' });
+  }
+
+  // Direct URL
+  return c.json({ url: videoUrl, type: 'url' });
+});
+
 // ═══ PUBLIC NOTIFICATIONS (global, userId is null) ═══
 app.get('/api/notifications', async (c) => {
   const db = getDb();
@@ -92,54 +219,99 @@ app.get('/api/notifications', async (c) => {
 });
 
 // ═══ PUBLIC REVIEWS ═══
-app.get('/api/reviews', async (c) => {
+// GET reviews — returns approved reviews + user's own pending review
+app.get('/api/reviews', authOptional, async (c) => {
   const db = getDb();
   const type = c.req.query('type');
   const id = c.req.query('id');
-  if (!type || !id) return c.json([]);
-  const condition = type === 'movie' ? eq(reviews.movieId, id) : eq(reviews.seriesId, id);
-  const result = await db.select({
-    id: reviews.id, rating: reviews.rating, text: reviews.text, createdAt: reviews.createdAt,
-    userName: users.displayName,
+  if (!type || !id) return c.json({ reviews: [], avgRating: 0, totalCount: 0 });
+
+  const contentCondition = type === 'movie' ? eq(reviews.movieId, id) : eq(reviews.seriesId, id);
+  const userId = c.get('userId') as string | undefined;
+
+  // Get approved reviews
+  const approvedRows = await db.select({
+    id: reviews.id, rating: reviews.rating, text: reviews.text,
+    createdAt: reviews.createdAt, status: reviews.status,
+    userId: reviews.userId, userName: users.name,
   }).from(reviews)
     .leftJoin(users, eq(reviews.userId, users.id))
-    .where(condition)
+    .where(and(contentCondition, eq(reviews.status, 'approved')))
     .orderBy(desc(reviews.createdAt))
     .limit(50);
-  return c.json(result.map(r => ({ ...r, userName: r.userName || 'Пользователь' })));
+
+  // Get user's own review if pending/rejected (not yet approved)
+  let myReview = null;
+  if (userId) {
+    const [own] = await db.select({
+      id: reviews.id, rating: reviews.rating, text: reviews.text,
+      createdAt: reviews.createdAt, status: reviews.status,
+      userId: reviews.userId, userName: users.name,
+    }).from(reviews)
+      .leftJoin(users, eq(reviews.userId, users.id))
+      .where(and(contentCondition, eq(reviews.userId, userId), sql`${reviews.status} != 'approved'`))
+      .limit(1);
+    if (own) {
+      const n = own.userName as any;
+      myReview = { ...own, userName: n ? (typeof n === 'object' ? (n.ru || n.uz || '') : String(n)) : 'Пользователь' };
+    }
+  }
+
+  // Calculate average rating from approved reviews
+  const ratings = approvedRows.filter(r => r.rating).map(r => r.rating!);
+  const avgRating = ratings.length > 0 ? parseFloat((ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1)) : 0;
+
+  const fmtName = (n: any) => n ? (typeof n === 'object' ? (n.ru || n.uz || '') : String(n)) : 'Пользователь';
+  return c.json({
+    reviews: approvedRows.map(r => ({ ...r, userName: fmtName(r.userName) || 'Пользователь' })),
+    myReview,
+    avgRating,
+    totalCount: approvedRows.length,
+  });
 });
 
-app.post('/api/reviews', async (c) => {
+// POST review — requires auth, one per user per content, status: pending
+app.post('/api/reviews', authRequired, async (c) => {
   const db = getDb();
+  const userId = c.get('userId') as string;
   const body = await c.req.json();
-  // For now, require either userId or create as guest (first user)
-  let userId = body.userId;
-  if (!userId) {
-    // Get or create a guest user
-    const [guest] = await db.select().from(users).limit(1);
-    if (!guest) return c.json({ error: 'No users' }, 400);
-    userId = guest.id;
+
+  const movieId = body.movieId || null;
+  const seriesId = body.seriesId || null;
+  if (!movieId && !seriesId) return c.json({ error: 'Укажите movieId или seriesId' }, 400);
+
+  const rating = parseInt(body.rating);
+  if (!rating || rating < 1 || rating > 5) return c.json({ error: 'Оценка от 1 до 5' }, 400);
+
+  // Check for duplicate review
+  const contentCondition = movieId ? eq(reviews.movieId, movieId) : eq(reviews.seriesId, seriesId!);
+  const [existing] = await db.select({ id: reviews.id, status: reviews.status })
+    .from(reviews)
+    .where(and(eq(reviews.userId, userId), contentCondition))
+    .limit(1);
+
+  if (existing) {
+    // Update existing review
+    const [updated] = await db.update(reviews).set({
+      rating,
+      text: body.text || '',
+      status: 'pending',
+      updatedAt: new Date(),
+    }).where(eq(reviews.id, existing.id)).returning();
+    return c.json({ review: updated, message: 'Отзыв обновлён и отправлен на модерацию' });
   }
+
+  // Create new review
   const [review] = await db.insert(reviews).values({
     userId,
-    movieId: body.movieId || null,
-    seriesId: body.seriesId || null,
-    rating: body.rating || 5,
+    movieId,
+    seriesId,
+    rating,
     text: body.text || '',
+    status: 'pending',
   }).returning();
 
-  // Update movie/series average rating
-  if (body.movieId) {
-    const allReviews = await db.select().from(reviews).where(eq(reviews.movieId, body.movieId));
-    const avg = allReviews.reduce((s, r) => s + (r.rating || 0), 0) / allReviews.length;
-    await db.update(movies).set({ rating: parseFloat(avg.toFixed(1)), ratingCount: allReviews.length }).where(eq(movies.id, body.movieId));
-  }
-  if (body.seriesId) {
-    const allReviews = await db.select().from(reviews).where(eq(reviews.seriesId, body.seriesId));
-    const avg = allReviews.reduce((s, r) => s + (r.rating || 0), 0) / allReviews.length;
-    await db.update(series).set({ rating: parseFloat(avg.toFixed(1)), ratingCount: allReviews.length }).where(eq(series.id, body.seriesId));
-  }
-  return c.json(review, 201);
+  return c.json({ review, message: 'Отзыв отправлен на модерацию' }, 201);
 });
 
 // ═══ ROUTES ═══
@@ -147,6 +319,7 @@ app.post('/api/reviews', async (c) => {
 app.use('/api/auth/login', authRateLimit);
 app.use('/api/auth/register', authRateLimit);
 app.use('/api/auth/google', authRateLimit);
+app.use('/api/auth/firebase', authRateLimit);
 app.use('/api/search', searchRateLimit);
 app.route('/api/home', homeRoute);
 app.route('/api/genres', genresRoute);
@@ -159,6 +332,7 @@ app.route('/api/users', usersRoute);
 app.route('/api/users', usersV2Route);
 app.route('/api/auth', authRoute);
 app.route('/api/subscriptions', subscriptionsRoute);
+app.route('/api/promo', promoRoute);
 app.route('/admin', adminRoute);
 app.route('/admin/upload', uploadRoute);
 app.route('/admin/analytics', analyticsRoute);
